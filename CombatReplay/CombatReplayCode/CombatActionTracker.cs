@@ -403,29 +403,18 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        if (_db.InCombat)
-        {
-            _db.EndCombat();
-            WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===");
-        
-            MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
-            _db.InProgressSave(_profileId);
-        }
+        _db.EndCombat();
+        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===\\");
+    
+        MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
+        _db.InProgressSave(_profileId);
         
         return Task.CompletedTask;
     }
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        if (_db.InCombat)
-        {
-            _db.EndCombat();
-            WriteIt($"=== Combat: {_db.CurrentCombat} **ended** in `victory` ===");
-        
-            MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
-            _db.InProgressSave(_profileId);
-        }
-
+        WriteIt($"=== Combat: {_db.CurrentCombat} **was** `victory` ===\\");
         return Task.CompletedTask;
     }
     
