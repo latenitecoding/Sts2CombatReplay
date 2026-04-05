@@ -25,14 +25,9 @@ public class CombatActionTracker : AbstractModel
 
     private int? _profileId;
     private string? _savePath;
-
-    private int _currentAct;
-    private int _currentRoom;
-    private int _currentCombat;
-    private int _currentTurn;
-
-    private bool _startedCombat;
-
+    
+    private CombatReplayDb _db = new();
+    
     public void StartTracking()
     {
         MainFile.Logger.Info($"CombatReplay tracking started");
@@ -108,6 +103,7 @@ public class CombatActionTracker : AbstractModel
         if (saveManager.HasRunSave)
         {
             MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
+            _db = CombatReplayDb.LoadFromFile(_profileId) ?? _db;
         }
         else if (_savePath != null)
         {
@@ -121,30 +117,27 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterActEntered()
     {
-        _currentAct += 1;
-        WriteIt($"### Act {_currentAct} started ###");
+        _db.NextAct();
+        WriteIt($"### Act {_db.CurrentAct} started ###");
         
-        _currentRoom += 1;
-        WriteIt($"##### Room: {_currentRoom} (`Ancient`) **entering** #####");
+        _db.NextRoom();
+        WriteIt($"##### Room: {_db.CurrentRoom} (`Ancient`) **entering** #####");
         
         return Task.CompletedTask;
     }
 
     public override Task AfterRoomEntered(AbstractRoom room)
     {
-        _currentRoom += 1;
-        WriteIt($"##### Room: {_currentRoom} (`{room.RoomType.ToString()}`) **entering** #####");
+        _db.NextRoom();
+        WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entering** #####");
         
         return Task.CompletedTask;
     }
 
     public override Task BeforeCombatStart()
     {
-        _currentCombat += 1;
-        _currentTurn = 0;
-        
-        _startedCombat = true;
-        WriteIt($"=== Combat: {_currentCombat} **starting** ===");
+        _db.StartCombat();
+        WriteIt($"=== Combat: {_db.CurrentCombat} **starting** ===");
         
         return Task.CompletedTask;
     }
@@ -164,8 +157,8 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterPlayerTurnStart(PlayerChoiceContext ctx, Player player)
     {
-        _currentTurn += 1;
-        WriteIt($"Turn: {_currentTurn} **started**");
+        _db.NextTurn();
+        WriteIt($"Turn: {_db.CurrentTurn} **started**");
         
         return Task.CompletedTask;       
     }
@@ -282,7 +275,7 @@ public class CombatActionTracker : AbstractModel
     
     public void RecordEnemyIntent(Creature owner, MoveState state)
     {
-        if (!_startedCombat) return;
+        if (!_db.InCombat) return;
         
         var intentions = string.Join(", ", state.Intents.Select(intention => $"`{intention.IntentType.ToString()}`"));
         WriteIt($"> {FormatCreature(owner)} **intends** [{intentions}] <\\");
@@ -385,7 +378,7 @@ public class CombatActionTracker : AbstractModel
         }
         else if (side == CombatSide.Enemy)
         {
-            WriteIt($"> Turn: {_currentTurn} **ended** <\\");
+            WriteIt($"> Turn: {_db.CurrentTurn} **ended** <\\");
         }
         return Task.CompletedTask;
     }
@@ -404,28 +397,33 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        _startedCombat = false;
-        WriteIt($"=== Combat: {_currentCombat} **ended* ===");
+        _db.EndCombat();
+        WriteIt($"=== Combat: {_db.CurrentCombat} **ended* ===");
         return Task.CompletedTask;
     }
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        WriteIt($"=== Combat: {_currentCombat} **ended** in `victory` ===");
+        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** in `victory` ===");
         return Task.CompletedTask;
     }
     
     public void OnRoomExited()
     {
-        WriteIt($"##### Room: {_currentRoom} **exited** #####");
-        _currentRoom += 1;
-        WriteIt($"##### Room: {_currentRoom} **entering** #####");
+        WriteIt($"##### Room: {_db.CurrentRoom} **exited** #####");
+        
+        MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
+        _db.InProgressSave(_profileId);
+        
+        _db.NextRoom();
+        WriteIt($"##### Room: {_db.CurrentRoom} **entering** #####");
     }
 
     public void OnRunEnded(long startTime)
     {
         WriteIt($"=== Run Ended ===");
         TaskHelper.RunSafely(FinalizeHistory(startTime));
+        _db.SaveRun(_profileId, startTime);
     }
 
     private async Task FinalizeHistory(long startTime)
@@ -471,7 +469,7 @@ public class CombatActionTracker : AbstractModel
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                "sts2_combat_tracker_current.md"
+                "sts2_combat_replay_current.md"
             ))
             .FirstOrDefault();
     }
@@ -486,7 +484,7 @@ public class CombatActionTracker : AbstractModel
                 profilePath,
                 "saves",
                 "combat_history",
-                $"sts2_combat_tracker_{startTime}.md"
+                $"sts2_combat_replay_{startTime}.md"
             ))
             .FirstOrDefault();
     }
