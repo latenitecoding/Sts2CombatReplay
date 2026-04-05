@@ -28,18 +28,32 @@ public class CombatActionTracker : AbstractModel
     
     private CombatReplayDb _db = new();
     
-    public void StartTracking()
+    private void StartTracking()
     {
         MainFile.Logger.Info($"CombatReplay tracking started");
         
-        _savePath = Path.Combine(
-            ProjectSettings.GlobalizePath("user://"),
-            "sts2_combat_replay_current.md"
-        );
+        var saveManager = SaveManager.Instance;
+        
+        MainFile.Logger.Info($"SaveManager Profile ID {saveManager.CurrentProfileId}");
+        MainFile.Logger.Info($"SaveManager Has Save: {saveManager.HasRunSave}");
+        
+        _profileId =  saveManager.CurrentProfileId;
+        _savePath = GetSavePath(saveManager.CurrentProfileId);
+        MainFile.Logger.Info($"CombatReplay save path set to `{_savePath}`");
+
+        if (saveManager.HasRunSave)
+        {
+            MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
+            _db = CombatReplayDb.LoadFromFile(_profileId) ?? _db;
+        }
+        else if (_savePath != null)
+        {
+            MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
+            File.Create(_savePath).Close();
+        }
+
         _cts = new CancellationTokenSource();
         _writerTask = Task.Run(() => WriterLoop(_cts.Token));
-
-        MainFile.Logger.Info($"CombatReplay save path set to `{_savePath}`");
     }
 
     private async Task StopTracking()
@@ -91,25 +105,7 @@ public class CombatActionTracker : AbstractModel
     
     public void OnRunStarted()
     {
-        var saveManager = SaveManager.Instance;
-        
-        MainFile.Logger.Info($"SaveManager Profile ID {saveManager.CurrentProfileId}");
-        MainFile.Logger.Info($"SaveManager Has Save: {saveManager.HasRunSave}");
-
-        _profileId =  saveManager.CurrentProfileId;
-        _savePath = GetSavePath(saveManager.CurrentProfileId) ?? _savePath;
-        MainFile.Logger.Info($"CombatReplay save path set to `{_savePath}`");
-
-        if (saveManager.HasRunSave)
-        {
-            MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
-            _db = CombatReplayDb.LoadFromFile(_profileId) ?? _db;
-        }
-        else if (_savePath != null)
-        {
-            MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
-            File.Create(_savePath).Close();
-        }
+        StartTracking();
         
         WriteIt($"# Run starting #");
         AfterActEntered();
@@ -120,6 +116,7 @@ public class CombatActionTracker : AbstractModel
         _db.NextAct();
         WriteIt($"### Act {_db.CurrentAct} started ###");
         
+        // each act starts with an 'Ancient' room which is handled implicitly by the game
         _db.NextRoom();
         WriteIt($"##### Room: {_db.CurrentRoom} (`Ancient`) **entering** #####");
         
@@ -128,9 +125,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterRoomEntered(AbstractRoom room)
     {
-        _db.NextRoom();
         WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entering** #####");
-        
         return Task.CompletedTask;
     }
 
@@ -142,7 +137,7 @@ public class CombatActionTracker : AbstractModel
         return Task.CompletedTask;
     }
 
-    public override Task AfterCreatureAddedToCombat(Creature creature)
+    public Task OnCreatureAdded(Creature creature)
     {
         var designation = (creature.IsEnemy)
             ? "Enemy"
@@ -259,6 +254,8 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
         }
+        
+        _db.AddCardPlay(card.Title);
     }
 
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
@@ -299,6 +296,11 @@ public class CombatActionTracker : AbstractModel
         else
         {
             WriteIt($"> {FormatCreature(target)} **receiving** `{amount}` dmg <\\");
+        }
+
+        if (cardSource != null)
+        {
+            _db.AddDamageDealt(cardSource.Title, amount);
         }
         return Task.CompletedTask;
     }
@@ -348,7 +350,11 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> {FormatCreature(creature)} **gained** `{amount}` blk <\\");
         }
-        
+
+        if (cardSource != null)
+        {
+            _db.AddBlockGained(cardSource.Title, amount);
+        }
         return Task.CompletedTask;
     }
 
@@ -397,17 +403,33 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        _db.EndCombat();
-        WriteIt($"=== Combat: {_db.CurrentCombat} **ended* ===");
+        if (_db.InCombat)
+        {
+            _db.EndCombat();
+            WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===");
+        
+            MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
+            _db.InProgressSave(_profileId);
+        }
+        
         return Task.CompletedTask;
     }
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** in `victory` ===");
+        if (_db.InCombat)
+        {
+            _db.EndCombat();
+            WriteIt($"=== Combat: {_db.CurrentCombat} **ended** in `victory` ===");
+        
+            MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
+            _db.InProgressSave(_profileId);
+        }
+
         return Task.CompletedTask;
     }
     
+    // current firing when a room is entered (except the first room)
     public void OnRoomExited()
     {
         WriteIt($"##### Room: {_db.CurrentRoom} **exited** #####");
@@ -460,18 +482,28 @@ public class CombatActionTracker : AbstractModel
             : $"Player: `{player.Character.Title.GetFormattedText()}` (`{player.NetId}`)";
     }
     
-    private static string? GetSavePath(int profileId)
+    private static string GetSavePath(int? profileId)
     {
+        var backupPath = Path.Combine(
+            ProjectSettings.GlobalizePath("user://"),
+            "sts2_combat_tracker_current.replay"
+        );
+
+        if (!profileId.HasValue)
+        {
+            return backupPath;
+        }
+        
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
         return Directory.GetDirectories(rootPath)
-            .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
+            .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId.Value}"))
             .Where(Directory.Exists)
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                "sts2_combat_replay_current.md"
+                "sts2_combat_tracker_current.replay"
             ))
-            .FirstOrDefault();
+            .FirstOrDefault(backupPath);
     }
     
     private static string? GetHistoryPath(int profileId, long startTime)
@@ -484,7 +516,7 @@ public class CombatActionTracker : AbstractModel
                 profilePath,
                 "saves",
                 "combat_history",
-                $"sts2_combat_replay_{startTime}.md"
+                $"sts2_combat_tracker_{startTime}.replay"
             ))
             .FirstOrDefault();
     }

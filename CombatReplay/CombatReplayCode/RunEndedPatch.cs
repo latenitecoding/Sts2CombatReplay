@@ -7,7 +7,7 @@ namespace CombatReplay.CombatReplayCode;
 [HarmonyPatch(typeof(RunManager), "OnEnded")]
 public class RunEndedPatch
 {
-    static void Postfix(bool isVictory, SerializableRun __result)
+    static void Postfix(SerializableRun __result)
     {
         MainFile.Tracker.OnRunEnded(__result.StartTime);
     }

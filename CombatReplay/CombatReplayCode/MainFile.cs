@@ -37,8 +37,6 @@ public partial class MainFile : Node
 
         Logger.Info("RunManager event handlers set");
         
-        Tracker.StartTracking();
-        
         ModHelper.SubscribeForCombatStateHooks(ModId, combatState => new List<AbstractModel> { Tracker });
         
         Logger.Info("ModHelper hooked");

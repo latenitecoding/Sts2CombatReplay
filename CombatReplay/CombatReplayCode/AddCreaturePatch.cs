@@ -9,6 +9,6 @@ public class AddCreaturePatch
 {
     static void Postfix(Creature creature)
     {
-        MainFile.Tracker.AfterCreatureAddedToCombat(creature);
+        MainFile.Tracker.OnCreatureAdded(creature);
     }
 }
