@@ -27,6 +27,7 @@ public class CombatActionTracker : AbstractModel
 
     private int? _profileId;
     private string? _savePath;
+    private bool _loadedSave;
     
     private CombatReplayDb _db = new();
     
@@ -47,6 +48,7 @@ public class CombatActionTracker : AbstractModel
         {
             MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
             _db = CombatReplayDb.LoadFromFile(_profileId) ?? _db;
+            _loadedSave = true;
         }
         else if (_savePath != null)
         {
@@ -108,6 +110,9 @@ public class CombatActionTracker : AbstractModel
     public void OnRunStarted()
     {
         StartTracking();
+
+        if (_loadedSave) return;
+        
         WriteIt($"# Run starting as Player NetId `{LocalContext.NetId}` on Profile{_profileId} #");
         AfterActEntered();
     }
@@ -183,7 +188,7 @@ public class CombatActionTracker : AbstractModel
                 continue;
             }
             var powers = string.Join(", ", creature.Powers.Select(power => $"`{power.Title.GetFormattedText()} {power.Amount}`"));
-            WriteIt($"> {FormatCreature(creature)} **alive** **with** [{powers}] powers <\\");
+            WriteIt($"> {FormatCreature(creature)} **active** **with** [{powers}] powers <\\");
         }
 
         var pcs = player.PlayerCombatState;
@@ -243,7 +248,7 @@ public class CombatActionTracker : AbstractModel
         var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
         var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
 
-        var dynamicVars = string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name} {(int) dynamicVar.EnchantedValue}`"));
+        var dynamicVars = string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
         
         var enchantment= card.Enchantment?.Title.ToString() ?? "";
         var affliction = card.Affliction?.Title.ToString() ?? "";
@@ -397,19 +402,19 @@ public class CombatActionTracker : AbstractModel
         
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **using** `{cardSource.Title}` **against** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(dealer)} **using** `{cardSource.Title}` [`Damage {(int) amount}`] **against** {FormatCreature(target)} <\\");
         }
         else if (dealer != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **hitting** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(dealer)} [`Damage {(int) amount}`] **hitting** {FormatCreature(target)} <\\");
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` **targeting** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
+            WriteIt($"> `{cardSource.Title}` [`Damage {(int) amount}`] **targeting** {FormatCreature(target)} <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **receiving** `{(int) amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(target)} **receiving** [`Damage {(int) amount}`] <\\");
         }
 
         RecordDamageTotals(target, dealer, cardSource, (int) amount, target.CurrentHp, target.Block);
@@ -421,19 +426,19 @@ public class CombatActionTracker : AbstractModel
     {
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` **against** {FormatCreature(target)} **dealing** `{result.TotalDamage}` dmg **removing** `{result.BlockedDamage}` blk <\\");
+            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\");
         }
         else if (dealer != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **hit** {FormatCreature(target)} **dealing** `{result.TotalDamage}` dmg **removing** `{result.BlockedDamage}` blk <\\");
+            WriteIt($"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\");
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` **targeted** {FormatCreature(target)} **dealing** `{result.TotalDamage}` dmg **removing** `{result.BlockedDamage}` blk <\\");
+            WriteIt($"> `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **targeted** {FormatCreature(target)} <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **received** `{result.TotalDamage}` dmg **removing** `{result.BlockedDamage}` blk <\\");
+            WriteIt($"> {FormatCreature(target)} **received** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\");
         }
         
         RecordDamageTotals(target, dealer, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
@@ -499,11 +504,11 @@ public class CombatActionTracker : AbstractModel
     {
         if (cardSource != null)
         {
-            WriteIt($"> {FormatCreature(creature)} **used** `{cardSource.Title}` **gaining** `{amount}` blk <\\");
+            WriteIt($"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {amount}`] <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(creature)} **gained** `{amount}` blk <\\");
+            WriteIt($"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\");
         }
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
