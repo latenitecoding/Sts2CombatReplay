@@ -44,6 +44,9 @@ public class CombatReplayDb
     public int TotalPetDamage { get; set; }
     public int TotalPetDamageReceived { get; set; }
     
+    public int TotalAnonymousDamage { get; set; }
+    public int TotalAnonymousBlock { get; set; }
+    
     public int TotalEnergyGained { get; set; }
     public int TotalStarsGained { get; set; }
     public int TotalEnergySpent { get; set; }

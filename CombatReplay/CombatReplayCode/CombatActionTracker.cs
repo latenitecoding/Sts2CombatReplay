@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Formats.Tar;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
@@ -169,8 +168,20 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterPlayerTurnStart(PlayerChoiceContext ctx, Player player)
     {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
+        
         _db.NextTurn();
         WriteIt($"Turn: {_db.CurrentTurn} **started**");
+
+        var pcs = player.PlayerCombatState;
+        if (pcs != null)
+        {
+            var handSize = pcs.Hand.Cards.Count;
+            var deckSize = pcs.DrawPile.Cards.Count;
+            var discardSize = pcs.DiscardPile.Cards.Count;
+            var exhaustSize = pcs.ExhaustPile.Cards.Count;
+            WriteIt($"> {FormatPlayer(player)} **has** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust <\\");
+        }
         
         _db.TotalTurnsPlayed += 1;
         return Task.CompletedTask;       
@@ -446,6 +457,10 @@ public class CombatActionTracker : AbstractModel
         {
             _db.AddDamageDealt(cardSource.Title, totalDamage);
         }
+        else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
+        {
+            _db.TotalAnonymousDamage += totalDamage;
+        }
     }
     
     public override Task AfterBlockBroken(Creature creature)
@@ -478,6 +493,10 @@ public class CombatActionTracker : AbstractModel
         if (cardSource != null)
         {
             _db.AddBlockGained(cardSource.Title, (int) amount);
+        }
+        else
+        {
+            _db.TotalAnonymousBlock += (int) amount;
         }
         return Task.CompletedTask;
     }
