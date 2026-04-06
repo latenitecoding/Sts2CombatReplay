@@ -394,6 +394,13 @@ public class CombatActionTracker : AbstractModel
         return Task.CompletedTask;
     }
 
+    public void OnCreatureHeal(Creature creature, Decimal amount)
+    {
+        WriteIt($"> {FormatCreature(creature)} **healed** `{(int) amount}` HP <\\");
+        if (!LocalContext.IsMe(creature)) return;
+        _db.TotalHpHealed += (int) amount;
+    }
+
     private void RecordDamageTotals(Creature target, Creature? dealer, CardModel? cardSource, int totalDamage, int? trueDamage, int? blockedDamage)
     {
         if (target.IsEnemy && IsMeOrMine(dealer))

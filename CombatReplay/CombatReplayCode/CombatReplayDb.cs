@@ -33,6 +33,7 @@ public class CombatReplayDb
     public int TotalDamage { get; set; }
     public int TotalTrueDamage { get; set; }
     public int TotalBlockedDamage { get; set; }
+    public int TotalHpHealed { get; set; }
     
     public int TotalBlockGained { get; set; }
     public int TotalDamageReceived { get; set; }
