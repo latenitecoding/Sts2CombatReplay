@@ -47,6 +47,14 @@ public class CombatReplayDb
     public int TotalAnonymousDamage { get; set; }
     public int TotalAnonymousBlock { get; set; }
     
+    public Decimal AvgDamagePerTurn { get; set; }
+    public Decimal AvgBlockPerTurn { get; set; }
+    public Decimal AvgDamagePerCombat { get; set; }
+    public Decimal AvgBlockPerCombat { get; set; }
+    public Decimal AvgDamageReceivedPerCombat { get; set; }
+    public Decimal AvgTrueDamageReceivedPerCombat { get; set; }
+    public Decimal AvgBlockedDamageReceivedPerCombat { get; set; }
+    
     public int TotalEnergyGained { get; set; }
     public int TotalStarsGained { get; set; }
     public int TotalEnergySpent { get; set; }
@@ -97,6 +105,7 @@ public class CombatReplayDb
     {
         InCombat = false;
         SetBestCardTurnStats();
+        SetAverages();
     }
 
     private void SetBestCardTurnStats()
@@ -110,6 +119,18 @@ public class CombatReplayDb
         _currentDefenseBlock = 0;
         _currentTurnDamage = 0;
         _currentTurnBlock = 0;
+    }
+
+    private void SetAverages()
+    {
+        AvgDamagePerTurn = ((decimal) TotalDamage) / TotalTurnsPlayed;
+        AvgBlockPerTurn = ((decimal) TotalBlockGained) / TotalTurnsPlayed;
+        
+        AvgDamagePerCombat = ((decimal) TotalDamage) / CurrentCombat;
+        AvgBlockPerCombat = ((decimal) TotalBlockGained) / CurrentCombat;
+        AvgDamageReceivedPerCombat = ((decimal) TotalDamageReceived) / CurrentCombat;
+        AvgTrueDamageReceivedPerCombat = ((decimal) TotalTrueDamageReceived) / CurrentCombat;
+        AvgBlockedDamageReceivedPerCombat = ((decimal) TotalBlockedDamageReceived) / CurrentCombat;
     }
 
     public Dictionary<string, CardStats> CardPlayStats { get; set; } = new();
