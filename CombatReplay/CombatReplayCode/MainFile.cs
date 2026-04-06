@@ -22,7 +22,7 @@ public partial class MainFile : Node
     
     private static void OnRunStarted(RunState state) => Tracker.OnRunStarted();
     private static void OnRoomExited() => Tracker.OnRoomExited();
-    
+
     public static void Initialize()
     {
         Logger.Info("Initializing CombatReplay...");

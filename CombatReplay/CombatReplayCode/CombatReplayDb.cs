@@ -43,6 +43,8 @@ public class CombatReplayDb
     public int TotalPetDamage { get; set; }
     public int TotalPetDamageReceived { get; set; }
     
+    public int TotalEnergyGained { get; set; }
+    public int TotalStarsGained { get; set; }
     public int TotalEnergySpent { get; set; }
     public int TotalStarsSpent { get; set; }
     
@@ -55,7 +57,6 @@ public class CombatReplayDb
     public int TotalDeckShuffles { get; set; }
     
     public int TotalOstyRevives { get; set; }
-    public int TotalStarsGained { get; set; }
     public int TotalForged { get; set; }
     public int TotalSummoned { get; set; }
     public int TotalOrbsChanneld { get; set; }

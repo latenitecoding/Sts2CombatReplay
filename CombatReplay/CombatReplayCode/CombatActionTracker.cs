@@ -108,8 +108,7 @@ public class CombatActionTracker : AbstractModel
     public void OnRunStarted()
     {
         StartTracking();
-        
-        WriteIt($"# Run starting #");
+        WriteIt($"# Run starting as Player NetId `{LocalContext.NetId}` on Profile{_profileId}#");
         AfterActEntered();
     }
 
@@ -148,7 +147,18 @@ public class CombatActionTracker : AbstractModel
                 : ((creature.IsPlayer)
                     ? "Player"
                     : "Other"));
-        WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
+        if (LocalContext.IsMe(creature))
+        {
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <--- THIS IS ME <\\");
+        }
+        else if (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner))
+        {
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <--- THIS IS MY PET <\\");
+        }
+        else
+        {
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
+        }
         
         if (creature.IsEnemy)
         {
@@ -168,28 +178,43 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterOstyRevived(Creature osty)
     {
-        WriteIt($"> {FormatCreature(osty)} **revived** <\\");
-        
-        _db.TotalOstyRevives += 1;
+        if (IsMeOrMine(osty))
+        {
+            WriteIt($"> My {FormatCreature(osty)} **revived** <\\");
+            _db.TotalOstyRevives += 1;
+        }
+        else
+        {
+            WriteIt($"> Another {FormatCreature(osty)} **revived** <\\");
+        }
         return Task.CompletedTask;
     }
 
     public override Task AfterEnergyReset(Player player)
     {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         WriteIt($"> {FormatPlayer(player)} **reset** `{player.MaxEnergy}` energy <\\");
         return Task.CompletedTask;
+    }
+
+    public void OnEnergyGained(Decimal amount)
+    {
+        WriteIt($"> I **gained** `{(int) amount}` energy <\\");
+        _db.TotalEnergyGained += (int) amount;
     }
     
     public override Task AfterStarsGained(int amount, Player gainer)
     {
+        if (!LocalContext.IsMe(gainer)) return Task.CompletedTask;
         WriteIt($"> {FormatPlayer(gainer)} **gained** `{amount}` stars <\\");
-        
         _db.TotalStarsGained += amount;
         return Task.CompletedTask;
     }
 
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        
         var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
         var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
 
@@ -201,69 +226,72 @@ public class CombatActionTracker : AbstractModel
 
         if (card.CurrentStarCost > 0 || card.HasStarCostX)
         {
-            WriteIt($"> **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy **and** `{starCost}` stars <\\");
+            WriteIt($"> I **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy **and** `{starCost}` stars <\\");
         }
         else
         {
-            WriteIt($"> **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy <\\");
+            WriteIt($"> I **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy <\\");
         }
 
-        if (LocalContext.IsMe(card.Owner))
-        {
-            _db.TotalCardsDrawn += 1;
-        }
+        _db.TotalCardsDrawn += 1;
         return Task.CompletedTask;
     }
 
     public override Task AfterEnergySpent(CardModel card, int amount)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         WriteIt($"> {FormatCard(card)} **cost** `{amount}` energy <\\");
-        
         _db.TotalEnergySpent += amount;
         return Task.CompletedTask;
     }
 
     public override Task AfterStarsSpent(int amount, Player spender)
     {
+        if (!LocalContext.IsMe(spender)) return Task.CompletedTask;
         WriteIt($"> {FormatPlayer(spender)} **spent** `{amount}` stars <\\");
-        
         _db.TotalStarsSpent += amount; 
         return Task.CompletedTask;
     }
 
     public override Task AfterPotionUsed(PotionModel potion, Creature? target)
     {
+        var prefix = (LocalContext.IsMe(potion.Owner)) ? "I" : "Another";
         if (target != null)
         {
-            WriteIt($"> _**used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\");
+            WriteIt($"> _{prefix} **used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\");
         }
         else
         {
-            WriteIt($"> _**used** `{potion.Title.GetFormattedText()}`_ <\\");
+            WriteIt($"> _{prefix} **used** `{potion.Title.GetFormattedText()}`_ <\\");
         }
 
-        _db.TotalPotionsUsed += 1;
+        if (LocalContext.IsMe(potion.Owner))
+        {
+            _db.TotalPotionsUsed += 1;
+        }
         return Task.CompletedTask;
     }
 
     public override Task AfterPotionDiscarded(PotionModel potion)
     {
-        WriteIt($"> _**discarded** `{potion.Title}`_ <\\");
-
+        if (!LocalContext.IsMe(potion.Owner)) return Task.CompletedTask;
+        WriteIt($"> _I **discarded** `{potion.Title}`_ <\\");
         _db.TotalPotionsDiscarded += 1;
         return Task.CompletedTask;
     }
 
     public override Task AfterForge(Decimal amount, Player forger, AbstractModel? source)
     {
-        WriteIt($"> {FormatPlayer(forger)} **forged** `{amount}` <\\");
+        if (!LocalContext.IsMe(forger)) return Task.CompletedTask;
+        WriteIt($"> {FormatPlayer(forger)} **forged** `{(int) amount}` <\\");
         _db.TotalForged += (int) amount;
         return Task.CompletedTask;
     }
 
     public override Task AfterSummon(PlayerChoiceContext ctx, Player summoner, Decimal amount)
     {
-        WriteIt($"> {FormatPlayer(summoner)} **summoned** `{amount}` <\\");
+        if (!LocalContext.IsMe(summoner)) return Task.CompletedTask;
+        WriteIt($"> {FormatPlayer(summoner)} **summoned** `{(int) amount}` <\\");
         _db.TotalSummoned += (int) amount;
         return Task.CompletedTask;
     }
@@ -280,12 +308,16 @@ public class CombatActionTracker : AbstractModel
             WriteIt($"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
         }
 
-        _db.TotalCardsPlayed += 1;
-        _db.AddCardPlay(card.Title);
+        if (LocalContext.IsMe(card.Owner))
+        {
+            _db.TotalCardsPlayed += 1;
+            _db.AddCardPlay(card.Title);
+        }
     }
 
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         WriteIt($"> {FormatPlayer(player)} **channeled** `{orb.Title}` <\\");
         _db.TotalOrbsChanneld += 1;
         return Task.CompletedTask;
@@ -293,6 +325,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterOrbEvoked(PlayerChoiceContext choiceContext, OrbModel orb, IEnumerable<Creature> targets)
     {
+        if (!LocalContext.IsMe(orb.Owner)) return Task.CompletedTask;
         WriteIt($"> `{orb.Title}` **evoked** <\\");
         _db.TotalOrbsEvoked += 1;
         return Task.CompletedTask;
@@ -301,7 +334,6 @@ public class CombatActionTracker : AbstractModel
     public void RecordEnemyIntent(Creature owner, MoveState state)
     {
         if (!_db.InCombat) return;
-        
         var intentions = string.Join(", ", state.Intents.Select(intention => $"`{intention.IntentType.ToString()}`"));
         WriteIt($"> {FormatCreature(owner)} **intends** [{intentions}] <\\");
     }
@@ -311,7 +343,7 @@ public class CombatActionTracker : AbstractModel
     public override Task BeforeDamageReceived(PlayerChoiceContext ctx, Creature target, Decimal amount,
         ValueProp props, Creature? dealer, CardModel? cardSource)
     {
-        int permittedBlock = (dealer != null && dealer.Name == target.Name) ? 0 : target.Block;
+        var permittedBlock = (dealer != null && dealer.Name == target.Name) ? 0 : target.Block;
         if (permittedBlock + target.CurrentHp > (int) amount)
         {
             return Task.CompletedTask;
@@ -364,7 +396,7 @@ public class CombatActionTracker : AbstractModel
 
     private void RecordDamageTotals(Creature target, Creature? dealer, CardModel? cardSource, int totalDamage, int? trueDamage, int? blockedDamage)
     {
-        if (target.IsEnemy)
+        if (target.IsEnemy && IsMeOrMine(dealer))
         {
             _db.TotalDamage += totalDamage;
             if (trueDamage.HasValue)
@@ -375,32 +407,35 @@ public class CombatActionTracker : AbstractModel
             {
                 _db.TotalBlockedDamage += blockedDamage.Value;
             }
-            if (dealer is { IsPet: true } and { IsEnemy: false })
+            if (dealer is { IsPet: true })
             {
                 _db.TotalPetDamage += totalDamage;
             }
         }
-        else if (target is { IsPet: true } and { IsEnemy: false })
+        else if (IsMeOrMine(target))
         {
-            _db.TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
-        }
-        else if (target.IsPlayer)
-        {
-            _db.TotalDamageReceived += totalDamage;
-            if (dealer is { IsPlayer: true })
+            if (target is { IsPet: true })
             {
-                _db.TotalSelfDamage += totalDamage;
+                _db.TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
             }
-            if (trueDamage.HasValue)
+            else
             {
-                _db.TotalTrueDamageReceived += trueDamage.Value;
-            }
-            if (blockedDamage.HasValue)
-            {
-                _db.TotalBlockedDamageReceived += blockedDamage.Value;
+                _db.TotalDamageReceived += totalDamage;
+                if (dealer != null && LocalContext.IsMe(dealer.Player))
+                {
+                    _db.TotalSelfDamage += totalDamage;
+                }
+                if (trueDamage.HasValue)
+                {
+                    _db.TotalTrueDamageReceived += trueDamage.Value;
+                }
+                if (blockedDamage.HasValue)
+                {
+                    _db.TotalBlockedDamageReceived += blockedDamage.Value;
+                }               
             }
         }       
-        if (cardSource != null)
+        if (cardSource != null && LocalContext.IsMe(cardSource.Owner))
         {
             _db.AddDamageDealt(cardSource.Title, totalDamage);
         }
@@ -430,10 +465,7 @@ public class CombatActionTracker : AbstractModel
             WriteIt($"> {FormatCreature(creature)} **gained** `{amount}` blk <\\");
         }
 
-        if (creature.IsEnemy)
-        {
-            return Task.CompletedTask;
-        }
+        if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         
         _db.TotalBlockGained += (int) amount;
         if (cardSource != null)
@@ -445,6 +477,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCardRetained(CardModel card)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsRetained += 1;
         WriteIt($"> **retained** {FormatCard(card)} <\\");
         return Task.CompletedTask;
@@ -452,6 +485,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsDiscarded += 1;
         WriteIt($"> **discarded** {FormatCard(card)} <\\");
         return Task.CompletedTask;
@@ -459,6 +493,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted += 1;
         WriteIt($"> **exhausted** {FormatCard(card)} <\\");
         return Task.CompletedTask;
@@ -479,6 +514,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
     {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         _db.TotalEmptyHands += 1;
         WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
         return Task.CompletedTask;
@@ -486,6 +522,7 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
     {
+        if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
         _db.TotalDeckShuffles += 1;
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** <\\");
         return Task.CompletedTask;
@@ -603,6 +640,11 @@ public class CombatActionTracker : AbstractModel
         }
         Directory.CreateDirectory(destDir);
         return Path.Combine(destDir, $"sts2_combat_tracker_{startTime}.replay");
+    }
+
+    private static bool IsMeOrMine(Creature? creature)
+    {
+        return creature != null && (LocalContext.IsMe(creature) || (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner)));
     }
     
     private void WriteIt(string msg)
