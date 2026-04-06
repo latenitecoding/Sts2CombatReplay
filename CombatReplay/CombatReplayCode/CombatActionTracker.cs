@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
@@ -107,7 +108,7 @@ public class CombatActionTracker : AbstractModel
     public void OnRunStarted()
     {
         StartTracking();
-        WriteIt($"# Run starting as Player NetId `{LocalContext.NetId}` on Profile{_profileId}#");
+        WriteIt($"# Run starting as Player NetId `{LocalContext.NetId}` on Profile{_profileId} #");
         AfterActEntered();
     }
 
@@ -204,7 +205,8 @@ public class CombatActionTracker : AbstractModel
     public override Task AfterEnergyReset(Player player)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
-        WriteIt($"> {FormatPlayer(player)} **reset** `{player.MaxEnergy}` energy <\\");
+        var currentEnergy = player.PlayerCombatState?.Energy ?? player.MaxEnergy;
+        WriteIt($"> {FormatPlayer(player)} **reset** `{currentEnergy}/{player.MaxEnergy}` energy <\\");
         return Task.CompletedTask;
     }
 
@@ -229,19 +231,24 @@ public class CombatActionTracker : AbstractModel
         var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
         var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
 
+        var dynamicVars = string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name} {(int) dynamicVar.EnchantedValue}`"));
+        
         var enchantment= card.Enchantment?.Title.ToString() ?? "";
         var affliction = card.Affliction?.Title.ToString() ?? "";
+
+        var replayCount = card.GetEnchantedReplayCount();
+        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount.ToString()}`]" : "";
         
         var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
 
         if (card.CurrentStarCost > 0 || card.HasStarCostX)
         {
-            WriteIt($"> I **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy **and** `{starCost}` stars <\\");
+            WriteIt($"> I **drew** {FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars <\\");
         }
         else
         {
-            WriteIt($"> I **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy <\\");
+            WriteIt($"> I **drew** {FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy <\\");
         }
 
         _db.TotalCardsDrawn += 1;
@@ -345,8 +352,24 @@ public class CombatActionTracker : AbstractModel
     public void RecordEnemyIntent(Creature owner, MoveState state)
     {
         if (!_db.InCombat) return;
-        var intentions = string.Join(", ", state.Intents.Select(intention => $"`{intention.IntentType.ToString()}`"));
-        WriteIt($"> {FormatCreature(owner)} **intends** [{intentions}] <\\");
+        var intentions = string.Join(
+            ", ",
+            state.Intents.Select(intention => {
+                if (intention is AttackIntent attackIntention)
+                {
+                    var dmg = attackIntention.DamageCalc?.Invoke() ?? -1;
+                    if (attackIntention.Repeats > 1)
+                    {
+                        return $"`{intention.IntentType.ToString()} {(int) dmg}x{attackIntention.Repeats}`";
+                    }
+                    else
+                    {
+                        return $"`{intention.IntentType.ToString()} {(int) dmg}`";
+                    }
+                }
+                return $"`{intention.IntentType.ToString()}`";
+            }));
+        WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}] <\\");
     }
     
     // if applying damages results in combat ending, then combat ends without AfterDamageReceived firing
