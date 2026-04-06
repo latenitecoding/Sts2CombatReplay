@@ -85,6 +85,11 @@ public class CombatReplayDb
     public int BestSingleDamage { get; set; }
     public int BestSingleBlock { get; set; }
 
+    private CombatStats _currentCombat = new();
+    public CombatStats BestCombat = new();
+    public CombatStats NemesisCombat = new();
+    public List<CombatStats> Combats { get; set; } = new ();
+
     public void NextAct() => CurrentAct += 1;
     public void NextRoom() => CurrentRoom += 1;
     
@@ -99,6 +104,9 @@ public class CombatReplayDb
         CurrentCombat += 1;
         CurrentTurn = 0;
         InCombat = true;
+
+        _currentCombat = new();
+        _currentCombat.CombatId = CurrentCombat;
     }
 
     public void EndCombat()
@@ -106,6 +114,7 @@ public class CombatReplayDb
         InCombat = false;
         SetBestCardTurnStats();
         SetAverages();
+        RecordCombat();
     }
 
     private void SetBestCardTurnStats()
@@ -132,6 +141,20 @@ public class CombatReplayDb
         AvgTrueDamageReceivedPerCombat = ((decimal) TotalTrueDamageReceived) / CurrentCombat;
         AvgBlockedDamageReceivedPerCombat = ((decimal) TotalBlockedDamageReceived) / CurrentCombat;
     }
+
+    public void RecordCombat()
+    {
+        Combats.Add(_currentCombat);
+        if (_currentCombat.TotalDamageDealt > BestCombat.TotalDamageDealt)
+        {
+            BestCombat = _currentCombat;
+        }
+        if (_currentCombat.TotalTrueDamageReceived > NemesisCombat.TotalTrueDamageReceived)
+        {
+            NemesisCombat = _currentCombat;
+        }
+    }
+    
 
     public Dictionary<string, CardStats> CardPlayStats { get; set; } = new();
 
@@ -174,6 +197,38 @@ public class CombatReplayDb
         }
     }
 
+    public void AddCombatDamageDealt(int totalDamage, int? trueDamage, int? blockedDamage)
+    {
+        TotalDamage += totalDamage;
+        _currentCombat.TotalDamageDealt += totalDamage;
+        if (trueDamage.HasValue)
+        {
+            TotalTrueDamage += trueDamage.Value;
+            _currentCombat.TotalTrueDamageDealt += trueDamage.Value;
+        }
+        if (blockedDamage.HasValue)
+        {
+            TotalBlockedDamage += blockedDamage.Value;
+            _currentCombat.TotalBlockedDamageDealt += blockedDamage.Value;
+        }
+    }
+
+    public void AddCombatDamageReceived(int totalDamage, int? trueDamage, int? blockedDamage)
+    {
+        TotalDamageReceived += totalDamage;
+        _currentCombat.TotalDamageReceived += totalDamage;
+        if (trueDamage.HasValue)
+        {
+            TotalTrueDamageReceived += trueDamage.Value;
+            _currentCombat.TotalTrueDamageReceived += trueDamage.Value;
+        }
+        if (blockedDamage.HasValue)
+        {
+            TotalBlockedDamageReceived += blockedDamage.Value;
+            _currentCombat.TotalBlockedDamageReceived += blockedDamage.Value;
+        }                  
+    }
+
     public void AddBlockGained(string cardTitle, int amount)
     {
         GetOrCreateCardStats(cardTitle).TotalBlockGained += amount;
@@ -183,6 +238,12 @@ public class CombatReplayDb
         {
             _currentDefenseBlock += amount;
         }
+    }
+
+    public void AddCombatBlockGained(int amount)
+    {
+        TotalBlockGained += amount;
+        _currentCombat.TotalBlockGained += amount;
     }
 
     public void InProgressSave(int? profileId)
@@ -254,5 +315,20 @@ public class CombatReplayDb
         public int TimesPlayed { get; set; }
         public Decimal TotalDamageDealt { get; set; }
         public Decimal TotalBlockGained { get; set; }
+    }
+
+    public class CombatStats
+    {
+        public int CombatId { get; set; }
+        
+        public int TotalDamageDealt { get; set; }
+        public int TotalTrueDamageDealt { get; set; }
+        public int TotalBlockedDamageDealt { get; set; }
+        
+        public int TotalBlockGained { get; set; }
+        
+        public int TotalDamageReceived { get; set; }
+        public int TotalTrueDamageReceived { get; set; }
+        public int TotalBlockedDamageReceived { get; set; }
     }
 }

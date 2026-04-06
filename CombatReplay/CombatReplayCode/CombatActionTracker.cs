@@ -439,15 +439,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (target.IsEnemy && IsMeOrMine(dealer))
         {
-            _db.TotalDamage += totalDamage;
-            if (trueDamage.HasValue)
-            {
-                _db.TotalTrueDamage += trueDamage.Value;
-            }
-            if (blockedDamage.HasValue)
-            {
-                _db.TotalBlockedDamage += blockedDamage.Value;
-            }
+            _db.AddCombatDamageDealt(totalDamage, trueDamage, blockedDamage);
             if (dealer is { IsPet: true })
             {
                 _db.TotalPetDamage += totalDamage;
@@ -461,19 +453,11 @@ public class CombatActionTracker : AbstractModel
             }
             else
             {
-                _db.TotalDamageReceived += totalDamage;
+                _db.AddCombatDamageReceived(totalDamage, trueDamage, blockedDamage);
                 if (dealer != null && LocalContext.IsMe(dealer.Player))
                 {
                     _db.TotalSelfDamage += totalDamage;
                 }
-                if (trueDamage.HasValue)
-                {
-                    _db.TotalTrueDamageReceived += trueDamage.Value;
-                }
-                if (blockedDamage.HasValue)
-                {
-                    _db.TotalBlockedDamageReceived += blockedDamage.Value;
-                }               
             }
         }       
         if (cardSource != null && LocalContext.IsMe(cardSource.Owner))
@@ -512,7 +496,7 @@ public class CombatActionTracker : AbstractModel
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         
-        _db.TotalBlockGained += (int) amount;
+        _db.AddCombatBlockGained((int) amount);
         if (cardSource != null)
         {
             _db.AddBlockGained(cardSource.Title, (int) amount);
