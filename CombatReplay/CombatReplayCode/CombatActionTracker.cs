@@ -159,7 +159,8 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
         }
-        
+
+        _db.AddCombatCreature(creature);
         if (creature.IsEnemy)
         {
             _db.TotalEnemiesFought += 1;
@@ -174,6 +175,17 @@ public class CombatActionTracker : AbstractModel
         _db.NextTurn();
         WriteIt($"Turn: {_db.CurrentTurn} **started**");
 
+        foreach (var creature in _db.GetCombatCreatureList())
+        {
+            if (creature.IsDead)
+            {
+                WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
+                continue;
+            }
+            var powers = string.Join(", ", creature.Powers.Select(power => $"`{power.Title.GetFormattedText()} {power.Amount}`"));
+            WriteIt($"> {FormatCreature(creature)} **alive** **with** [{powers}] powers <\\");
+        }
+
         var pcs = player.PlayerCombatState;
         if (pcs != null)
         {
@@ -181,7 +193,7 @@ public class CombatActionTracker : AbstractModel
             var deckSize = pcs.DrawPile.Cards.Count;
             var discardSize = pcs.DiscardPile.Cards.Count;
             var exhaustSize = pcs.ExhaustPile.Cards.Count;
-            WriteIt($"> {FormatPlayer(player)} **has** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust <\\");
+            WriteIt($"> {FormatPlayer(player)} **has** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
         }
         
         _db.TotalTurnsPlayed += 1;

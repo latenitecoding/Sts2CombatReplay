@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace CombatReplay.CombatReplayCode;
 
@@ -88,7 +89,9 @@ public class CombatReplayDb
     private CombatStats _currentCombat = new();
     public CombatStats BestCombat = new();
     public CombatStats NemesisCombat = new();
-    public List<CombatStats> Combats { get; set; } = new ();
+    public List<CombatStats> Combats { get; set; } = new();
+
+    private List<Creature> _currentCreatures = new();
 
     public void NextAct() => CurrentAct += 1;
     public void NextRoom() => CurrentRoom += 1;
@@ -112,9 +115,12 @@ public class CombatReplayDb
     public void EndCombat()
     {
         InCombat = false;
+        
         SetBestCardTurnStats();
         SetAverages();
         RecordCombat();
+        
+        _currentCreatures.Clear();
     }
 
     private void SetBestCardTurnStats()
@@ -154,7 +160,30 @@ public class CombatReplayDb
             NemesisCombat = _currentCombat;
         }
     }
+
+    public void AddCombatCreature(Creature creature)
+    {
+        MainFile.Logger.Info($"Adding creature {creature.Name}");
+        
+        _currentCreatures.Add(creature);
+        _currentCreatures.Sort((c1, c2) => {
+            if (c1.CombatId.HasValue && c2.CombatId.HasValue)
+            {
+                return (int) (c1.CombatId.Value - c2.CombatId.Value);
+            }
+            if (c1.CombatId.HasValue)
+            {
+                return -1;
+            }
+            if (c2.CombatId.HasValue)
+            {
+                return 1;
+            }
+            return 0;
+        });
+    }
     
+    public IReadOnlyList<Creature> GetCombatCreatureList() => _currentCreatures;
 
     public Dictionary<string, CardStats> CardPlayStats { get; set; } = new();
 
