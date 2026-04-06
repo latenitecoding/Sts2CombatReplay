@@ -6,6 +6,8 @@ namespace CombatReplay.CombatReplayCode;
 
 public class CombatReplayDb
 {
+    private static JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+    
     public static CombatReplayDb? LoadFromFile(int? profileId)
     {
         var savePath = GetSavePath(profileId);
@@ -22,17 +24,53 @@ public class CombatReplayDb
     public int CurrentCombat { get; set; }
     public int CurrentTurn { get; set; }
     public bool InCombat { get; set; }
+    
+    public int TotalTurnsPlayed { get; set; }
+    public int TotalEnemiesFought { get; set; }
+    public int TotalPotionsUsed { get; set; }
+    public int TotalPotionsDiscarded { get; set; }
+    
+    public int TotalDamage { get; set; }
+    public int TotalTrueDamage { get; set; }
+    public int TotalBlockedDamage { get; set; }
+    
+    public int TotalBlockGained { get; set; }
+    public int TotalDamageReceived { get; set; }
+    public int TotalTrueDamageReceived { get; set; }
+    public int TotalBlockedDamageReceived { get; set; }
+    public int TotalSelfDamage { get; set; }
+    
+    public int TotalPetDamage { get; set; }
+    public int TotalPetDamageReceived { get; set; }
+    
+    public int TotalEnergySpent { get; set; }
+    public int TotalStarsSpent { get; set; }
+    
+    public int TotalCardsDrawn { get; set; }
+    public int TotalCardsPlayed { get; set; }
+    public int TotalCardsDiscarded { get; set; }
+    public int TotalCardsRetained { get; set; }
+    public int TotalCardsExhausted { get; set; }
+    public int TotalEmptyHands { get; set; }
+    public int TotalDeckShuffles { get; set; }
+    
+    public int TotalOstyRevives { get; set; }
+    public int TotalStarsGained { get; set; }
+    public int TotalForged { get; set; }
+    public int TotalSummoned { get; set; }
+    public int TotalOrbsChanneld { get; set; }
+    public int TotalOrbsEvoked { get; set; }
 
-    private Decimal _currentTurnDamage;
-    private Decimal _currentTurnBlock;
-    public Decimal BestSingleTurnDamage { get; set; }
-    public Decimal BestSingleTurnBlock { get; set; }
+    private int _currentTurnDamage;
+    private int _currentTurnBlock;
+    public int BestSingleTurnDamage { get; set; }
+    public int BestSingleTurnBlock { get; set; }
 
     private string _prevCardPlay = "";
-    private Decimal _currentAttackDamage;
-    private Decimal _currentDefenseBlock;
-    public Decimal BestSingleDamage { get; set; }
-    public Decimal BestSingleBlock { get; set; }
+    private int _currentAttackDamage;
+    private int _currentDefenseBlock;
+    public int BestSingleDamage { get; set; }
+    public int BestSingleBlock { get; set; }
 
     public void NextAct() => CurrentAct += 1;
     public void NextRoom() => CurrentRoom += 1;
@@ -71,7 +109,7 @@ public class CombatReplayDb
 
     public Dictionary<string, CardStats> CardPlayStats { get; set; } = new();
 
-    private string TitleToKey(string cardTitle)
+    private static string TitleToKey(string cardTitle)
     {
         return Regex.Replace(cardTitle, @"\+\d*$", "").Trim();
     }
@@ -99,7 +137,7 @@ public class CombatReplayDb
         _prevCardPlay = cardTitle;
     }
 
-    public void AddDamageDealt(string cardTitle, Decimal amount)
+    public void AddDamageDealt(string cardTitle, int amount)
     {
         GetOrCreateCardStats(cardTitle).TotalDamageDealt += amount;
 
@@ -110,7 +148,7 @@ public class CombatReplayDb
         }
     }
 
-    public void AddBlockGained(string cardTitle, Decimal amount)
+    public void AddBlockGained(string cardTitle, int amount)
     {
         GetOrCreateCardStats(cardTitle).TotalBlockGained += amount;
 
@@ -123,13 +161,13 @@ public class CombatReplayDb
 
     public void InProgressSave(int? profileId)
     {
-        File.WriteAllText(GetSavePath(profileId), JsonSerializer.Serialize(this));
+        File.WriteAllText(GetSavePath(profileId), JsonSerializer.Serialize(this, _jsonOptions));
     }
 
     public void SaveRun(int? profileId, long startTime)
     {
         var savePath = GetSavePath(profileId);
-        File.WriteAllText(savePath, JsonSerializer.Serialize(this));
+        File.WriteAllText(savePath, JsonSerializer.Serialize(this, _jsonOptions));
 
         if (profileId.HasValue)
         {
@@ -168,16 +206,21 @@ public class CombatReplayDb
     private static string? GetHistoryPath(int profileId, long startTime)
     {
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
-        return Directory.GetDirectories(rootPath)
+        var destDir = Directory.GetDirectories(rootPath)
             .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
             .Where(Directory.Exists)
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                "combat_history",
-                $"sts2_combat_stats_{startTime}.json"
+                "combat_history"
             ))
             .FirstOrDefault();
+        if (destDir == null)
+        {
+            return null;
+        }
+        Directory.CreateDirectory(destDir);
+        return Path.Combine(destDir, $"sts2_combat_stats_{startTime}.json");
     }
 
     public class CardStats

@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Formats.Tar;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
@@ -147,6 +149,11 @@ public class CombatActionTracker : AbstractModel
                     ? "Player"
                     : "Other"));
         WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
+        
+        if (creature.IsEnemy)
+        {
+            _db.TotalEnemiesFought += 1;
+        }
         return Task.CompletedTask;
     }
 
@@ -155,12 +162,15 @@ public class CombatActionTracker : AbstractModel
         _db.NextTurn();
         WriteIt($"Turn: {_db.CurrentTurn} **started**");
         
+        _db.TotalTurnsPlayed += 1;
         return Task.CompletedTask;       
     }
 
     public override Task AfterOstyRevived(Creature osty)
     {
         WriteIt($"> {FormatCreature(osty)} **revived** <\\");
+        
+        _db.TotalOstyRevives += 1;
         return Task.CompletedTask;
     }
 
@@ -173,6 +183,8 @@ public class CombatActionTracker : AbstractModel
     public override Task AfterStarsGained(int amount, Player gainer)
     {
         WriteIt($"> {FormatPlayer(gainer)} **gained** `{amount}` stars <\\");
+        
+        _db.TotalStarsGained += amount;
         return Task.CompletedTask;
     }
 
@@ -195,19 +207,27 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> **drew** {FormatCard(card)} [{tags}] [{keywords}] [{enchantment}] [{affliction}] **costing** `{energyCost}` energy <\\");
         }
-        
+
+        if (LocalContext.IsMe(card.Owner))
+        {
+            _db.TotalCardsDrawn += 1;
+        }
         return Task.CompletedTask;
     }
 
     public override Task AfterEnergySpent(CardModel card, int amount)
     {
         WriteIt($"> {FormatCard(card)} **cost** `{amount}` energy <\\");
+        
+        _db.TotalEnergySpent += amount;
         return Task.CompletedTask;
     }
 
     public override Task AfterStarsSpent(int amount, Player spender)
     {
         WriteIt($"> {FormatPlayer(spender)} **spent** `{amount}` stars <\\");
+        
+        _db.TotalStarsSpent += amount; 
         return Task.CompletedTask;
     }
 
@@ -215,31 +235,36 @@ public class CombatActionTracker : AbstractModel
     {
         if (target != null)
         {
-            WriteIt($"> _**used** `{potion.Title}` **on** {FormatCreature(target)}_ <\\");
+            WriteIt($"> _**used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\");
         }
         else
         {
-            WriteIt($"> _**used** `{potion.Title}`_ <\\");
+            WriteIt($"> _**used** `{potion.Title.GetFormattedText()}`_ <\\");
         }
 
+        _db.TotalPotionsUsed += 1;
         return Task.CompletedTask;
     }
 
     public override Task AfterPotionDiscarded(PotionModel potion)
     {
         WriteIt($"> _**discarded** `{potion.Title}`_ <\\");
+
+        _db.TotalPotionsDiscarded += 1;
         return Task.CompletedTask;
     }
 
     public override Task AfterForge(Decimal amount, Player forger, AbstractModel? source)
     {
         WriteIt($"> {FormatPlayer(forger)} **forged** `{amount}` <\\");
+        _db.TotalForged += (int) amount;
         return Task.CompletedTask;
     }
 
     public override Task AfterSummon(PlayerChoiceContext ctx, Player summoner, Decimal amount)
     {
         WriteIt($"> {FormatPlayer(summoner)} **summoned** `{amount}` <\\");
+        _db.TotalSummoned += (int) amount;
         return Task.CompletedTask;
     }
 
@@ -254,19 +279,22 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
         }
-        
+
+        _db.TotalCardsPlayed += 1;
         _db.AddCardPlay(card.Title);
     }
 
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         WriteIt($"> {FormatPlayer(player)} **channeled** `{orb.Title}` <\\");
+        _db.TotalOrbsChanneld += 1;
         return Task.CompletedTask;
     }
 
     public override Task AfterOrbEvoked(PlayerChoiceContext choiceContext, OrbModel orb, IEnumerable<Creature> targets)
     {
         WriteIt($"> `{orb.Title}` **evoked** <\\");
+        _db.TotalOrbsEvoked += 1;
         return Task.CompletedTask;
     }
     
@@ -278,30 +306,35 @@ public class CombatActionTracker : AbstractModel
         WriteIt($"> {FormatCreature(owner)} **intends** [{intentions}] <\\");
     }
     
+    // if applying damages results in combat ending, then combat ends without AfterDamageReceived firing
+    // so this is used to ensure that all possible damage events are observed
     public override Task BeforeDamageReceived(PlayerChoiceContext ctx, Creature target, Decimal amount,
         ValueProp props, Creature? dealer, CardModel? cardSource)
     {
+        int permittedBlock = (dealer != null && dealer.Name == target.Name) ? 0 : target.Block;
+        if (permittedBlock + target.CurrentHp > (int) amount)
+        {
+            return Task.CompletedTask;
+        }
+        
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **using** `{cardSource.Title}` **against** {FormatCreature(target)} **totaling** `{amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(dealer)} **using** `{cardSource.Title}` **against** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
         }
         else if (dealer != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **hitting** {FormatCreature(target)} **totaling** `{amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(dealer)} **hitting** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` **targeting** {FormatCreature(target)} **totaling** `{amount}` dmg <\\");
+            WriteIt($"> `{cardSource.Title}` **targeting** {FormatCreature(target)} **totaling** `{(int) amount}` dmg <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **receiving** `{amount}` dmg <\\");
+            WriteIt($"> {FormatCreature(target)} **receiving** `{(int) amount}` dmg <\\");
         }
 
-        if (cardSource != null)
-        {
-            _db.AddDamageDealt(cardSource.Title, amount);
-        }
+        RecordDamageTotals(target, dealer, cardSource, (int) amount, target.CurrentHp, target.Block);
         return Task.CompletedTask;
     }
     
@@ -324,9 +357,55 @@ public class CombatActionTracker : AbstractModel
         {
             WriteIt($"> {FormatCreature(target)} **received** `{result.TotalDamage}` dmg **removing** `{result.BlockedDamage}` blk <\\");
         }
+        
+        RecordDamageTotals(target, dealer, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
         return Task.CompletedTask;
     }
 
+    private void RecordDamageTotals(Creature target, Creature? dealer, CardModel? cardSource, int totalDamage, int? trueDamage, int? blockedDamage)
+    {
+        if (target.IsEnemy)
+        {
+            _db.TotalDamage += totalDamage;
+            if (trueDamage.HasValue)
+            {
+                _db.TotalTrueDamage += trueDamage.Value;
+            }
+            if (blockedDamage.HasValue)
+            {
+                _db.TotalBlockedDamage += blockedDamage.Value;
+            }
+            if (dealer is { IsPet: true } and { IsEnemy: false })
+            {
+                _db.TotalPetDamage += totalDamage;
+            }
+        }
+        else if (target is { IsPet: true } and { IsEnemy: false })
+        {
+            _db.TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
+        }
+        else if (target.IsPlayer)
+        {
+            _db.TotalDamageReceived += totalDamage;
+            if (dealer is { IsPlayer: true })
+            {
+                _db.TotalSelfDamage += totalDamage;
+            }
+            if (trueDamage.HasValue)
+            {
+                _db.TotalTrueDamageReceived += trueDamage.Value;
+            }
+            if (blockedDamage.HasValue)
+            {
+                _db.TotalBlockedDamageReceived += blockedDamage.Value;
+            }
+        }       
+        if (cardSource != null)
+        {
+            _db.AddDamageDealt(cardSource.Title, totalDamage);
+        }
+    }
+    
     public override Task AfterBlockBroken(Creature creature)
     {
         WriteIt($"> {FormatCreature(creature)} **broken** <\\");
@@ -351,27 +430,36 @@ public class CombatActionTracker : AbstractModel
             WriteIt($"> {FormatCreature(creature)} **gained** `{amount}` blk <\\");
         }
 
+        if (creature.IsEnemy)
+        {
+            return Task.CompletedTask;
+        }
+        
+        _db.TotalBlockGained += (int) amount;
         if (cardSource != null)
         {
-            _db.AddBlockGained(cardSource.Title, amount);
+            _db.AddBlockGained(cardSource.Title, (int) amount);
         }
         return Task.CompletedTask;
     }
 
     public override Task AfterCardRetained(CardModel card)
     {
+        _db.TotalCardsRetained += 1;
         WriteIt($"> **retained** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
 
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
+        _db.TotalCardsDiscarded += 1;
         WriteIt($"> **discarded** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
 
     public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
     {
+        _db.TotalCardsExhausted += 1;
         WriteIt($"> **exhausted** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
@@ -391,12 +479,14 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
     {
+        _db.TotalEmptyHands += 1;
         WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
         return Task.CompletedTask;
     }
 
     public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
     {
+        _db.TotalDeckShuffles += 1;
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** <\\");
         return Task.CompletedTask;
     }
@@ -498,16 +588,21 @@ public class CombatActionTracker : AbstractModel
     private static string? GetHistoryPath(int profileId, long startTime)
     {
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
-        return Directory.GetDirectories(rootPath)
+        var destDir = Directory.GetDirectories(rootPath)
             .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
             .Where(Directory.Exists)
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                "combat_history",
-                $"sts2_combat_tracker_{startTime}.replay"
+                "combat_history"
             ))
             .FirstOrDefault();
+        if (destDir == null)
+        {
+            return null;
+        }
+        Directory.CreateDirectory(destDir);
+        return Path.Combine(destDir, $"sts2_combat_tracker_{startTime}.replay");
     }
     
     private void WriteIt(string msg)
