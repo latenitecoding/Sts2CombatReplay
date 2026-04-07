@@ -198,7 +198,7 @@ public class CombatActionTracker : AbstractModel
             var deckSize = pcs.DrawPile.Cards.Count;
             var discardSize = pcs.DiscardPile.Cards.Count;
             var exhaustSize = pcs.ExhaustPile.Cards.Count;
-            WriteIt($"> {FormatPlayer(player)} **has** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
+            WriteIt($"> {FormatPlayer(player)} **have** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
         }
         
         _db.TotalTurnsPlayed += 1;
@@ -390,7 +390,7 @@ public class CombatActionTracker : AbstractModel
     public override Task AfterOrbEvoked(PlayerChoiceContext choiceContext, OrbModel orb, IEnumerable<Creature> targets)
     {
         if (!LocalContext.IsMe(orb.Owner)) return Task.CompletedTask;
-        WriteIt($"> `{orb.Title}` **evoked** <\\");
+        WriteIt($"> {FormatPlayer(orb.Owner)} **evoked** `{orb.Title}` <\\");
         _db.TotalOrbsEvoked += 1;
         return Task.CompletedTask;
     }
@@ -476,9 +476,11 @@ public class CombatActionTracker : AbstractModel
 
     public void OnCreatureHeal(Creature creature, Decimal amount)
     {
-        WriteIt($"> {FormatCreature(creature)} **healed** `{(int) amount}` HP <\\");
+        if (_db.CurrentRoom <= 1) return;
+        var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
+        WriteIt($"> {FormatCreature(creature)} **healed** `{(int) trueAmount}` HP <\\");
         if (!LocalContext.IsMe(creature)) return;
-        _db.TotalHpHealed += (int) amount;
+        _db.TotalHpHealed += trueAmount;
     }
 
     private void RecordDamageTotals(Creature target, Creature? dealer, CardModel? cardSource, int totalDamage, int? trueDamage, int? blockedDamage)
@@ -672,11 +674,12 @@ public class CombatActionTracker : AbstractModel
             : $"`{creature.Name}` (`{creature.ModelId}`) [`{creature.Block}|{creature.CurrentHp}/{creature.MaxHp}` bHP]";
     }
 
-    private static string FormatPlayer(Player player)
+    private static string FormatPlayer(Player player, bool useTitle = false)
     {
+        var playerName = (LocalContext.IsMe(player) && !useTitle) ? "I" : $"Player: `{player.Character.Title.GetFormattedText()}`";
         return (player.Creature.CombatId != null)
-            ? $"Player: `{player.Character.Title.GetFormattedText()}` (`{player.Creature.CombatId}`)"
-            : $"Player: `{player.Character.Title.GetFormattedText()}` (`{player.NetId}`)";
+            ? $"{playerName} (`{player.Creature.CombatId}`)"
+            : $"{playerName} (`{player.NetId}`)";
     }
     
     private static string GetSavePath(int? profileId)

@@ -99,8 +99,8 @@ public class CombatReplayDb
     public int BestSingleBlock { get; set; }
 
     private CombatStats _currentCombat = new();
-    public CombatStats HeroicCombat = new();
-    public CombatStats NemesisCombat = new();
+    public CombatStats? HeroicCombat { get; set; }
+    public CombatStats? NemesisCombat { get; set; }
     public List<CombatStats> Combats { get; set; } = new();
 
     private List<Creature> _currentCreatures = new();
@@ -121,8 +121,10 @@ public class CombatReplayDb
         CurrentTurn = 0;
         InCombat = true;
 
-        _currentCombat = new();
-        _currentCombat.CombatId = CurrentCombat;
+        _currentCombat = new CombatStats()
+        {
+            CombatId = CurrentCombat
+        };
     }
 
     public void EndCombat()
@@ -170,11 +172,11 @@ public class CombatReplayDb
     public void RecordCombat()
     {
         Combats.Add(_currentCombat);
-        if (_currentCombat.TotalDamageDealt > HeroicCombat.TotalDamageDealt)
+        if (HeroicCombat == null || _currentCombat.TotalDamageDealt > HeroicCombat.TotalDamageDealt)
         {
             HeroicCombat = _currentCombat;
         }
-        if (_currentCombat.TotalTrueDamageReceived > NemesisCombat.TotalTrueDamageReceived)
+        if (NemesisCombat == null || _currentCombat.TotalTrueDamageReceived > NemesisCombat.TotalTrueDamageReceived)
         {
             NemesisCombat = _currentCombat;
         }
