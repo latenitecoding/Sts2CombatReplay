@@ -379,6 +379,13 @@ public class CombatActionTracker : AbstractModel
         }
     }
 
+    public void RecordCardCreated(Player owner, CardModel card)
+    {
+        if (!LocalContext.IsMe(card.Owner) || !_db.InCombat) return;
+        WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
+        _db.TotalCardsCreated += 1;
+    }
+
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;

@@ -1,0 +1,25 @@
+using System.Reflection;
+using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+
+namespace CombatReplay.CombatReplayCode;
+
+[HarmonyPatch]
+public class CloneCardPatch
+{
+    static MethodBase TargetMethod()
+    {
+        return AccessTools.Method(typeof(CombatState), "CloneCard",
+            new Type[]
+            {
+                typeof(CardModel),
+            });
+    }
+
+    static void Prefix(CardModel mutableCard)
+    {
+        MainFile.Tracker.RecordCardCreated(mutableCard.Owner, mutableCard);
+    }
+}

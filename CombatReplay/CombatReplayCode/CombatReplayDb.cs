@@ -71,6 +71,7 @@ public class CombatReplayDb
     
     public int TotalOstyRevives { get; set; }
     public int TotalForged { get; set; }
+    public int TotalCardsCreated { get; set; }
     public int TotalSummoned { get; set; }
     public int TotalOrbsChanneled { get; set; }
     public int TotalOrbsEvoked { get; set; }
