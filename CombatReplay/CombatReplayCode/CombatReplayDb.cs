@@ -72,7 +72,7 @@ public class CombatReplayDb
     public int TotalOstyRevives { get; set; }
     public int TotalForged { get; set; }
     public int TotalSummoned { get; set; }
-    public int TotalOrbsChanneld { get; set; }
+    public int TotalOrbsChanneled { get; set; }
     public int TotalOrbsEvoked { get; set; }
 
     private int _currentTurnDamage;
@@ -111,6 +111,7 @@ public class CombatReplayDb
     public void NextTurn()
     {
         CurrentTurn += 1;
+        _currentCombat.TotalTurns += 1;
         SetBestCardTurnStats();
     }
 
@@ -306,9 +307,9 @@ public class CombatReplayDb
         if (profileId.HasValue)
         {
             var finalPath = GetHistoryPath(profileId.Value, startTime);
-            if (finalPath != null)
+            if (File.Exists(savePath) && finalPath != null)
             {
-                File.Move(savePath, finalPath);
+                File.Move(savePath, finalPath, overwrite: true);
             }           
         }
     }
@@ -367,6 +368,7 @@ public class CombatReplayDb
     public class CombatStats
     {
         public int CombatId { get; set; }
+        public int TotalTurns { get; set; }
         
         public int TotalDamageDealt { get; set; }
         public int TotalTrueDamageDealt { get; set; }

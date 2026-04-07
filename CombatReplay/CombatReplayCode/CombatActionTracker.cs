@@ -383,7 +383,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         WriteIt($"> {FormatPlayer(player)} **channeled** `{orb.Title}` <\\");
-        _db.TotalOrbsChanneld += 1;
+        _db.TotalOrbsChanneled += 1;
         return Task.CompletedTask;
     }
 
@@ -558,7 +558,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsRetained += 1;
-        WriteIt($"> **retained** {FormatCard(card)} <\\");
+        WriteIt($"> I **retained** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
 
@@ -566,7 +566,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsDiscarded += 1;
-        WriteIt($"> **discarded** {FormatCard(card)} <\\");
+        WriteIt($"> I **discarded** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
 
@@ -574,7 +574,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted += 1;
-        WriteIt($"> **exhausted** {FormatCard(card)} <\\");
+        WriteIt($"> I **exhausted** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
 
@@ -650,10 +650,12 @@ public class CombatActionTracker : AbstractModel
         if (_profileId.HasValue)
         {
             var finalPath = GetHistoryPath(_profileId.Value, startTime);
-            if (_savePath != null && finalPath != null)
+            if (_savePath != null && File.Exists(_savePath) && finalPath != null)
             {
-                File.Move(_savePath, finalPath);
+                File.Move(_savePath, finalPath, overwrite: true);
                 MainFile.Logger.Info($"Combat history saved to: {finalPath}");
+                
+                _savePath = null;
             }
         }       
     }
