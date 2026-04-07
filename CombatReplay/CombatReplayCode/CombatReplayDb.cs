@@ -80,6 +80,18 @@ public class CombatReplayDb
     public int BestSingleTurnDamage { get; set; }
     public int BestSingleTurnBlock { get; set; }
 
+    public int TotalStrengthGained { get; set; }
+    public int TotalVulnerableApplied { get; set; }
+    public int TotalWeakApplied { get; set; }
+    public int TotalPoisonApplied { get; set; }
+    public int TotalDoomApplied { get; set; }
+    
+    public Decimal AvgStrengthGainedPerCombat { get; set; }
+    public Decimal AvgVulnerableAppliedPerCombat { get; set; }
+    public Decimal AvgWeakAppliedPerCombat { get; set; }
+    public Decimal AvgPoisonAppliedPerCombat { get; set; }
+    public Decimal AvgDoomAppliedPerCombat { get; set; }
+    
     private string _prevCardPlay = "";
     private int _currentAttackDamage;
     private int _currentDefenseBlock;
@@ -87,7 +99,7 @@ public class CombatReplayDb
     public int BestSingleBlock { get; set; }
 
     private CombatStats _currentCombat = new();
-    public CombatStats BestCombat = new();
+    public CombatStats HeroicCombat = new();
     public CombatStats NemesisCombat = new();
     public List<CombatStats> Combats { get; set; } = new();
 
@@ -146,14 +158,20 @@ public class CombatReplayDb
         AvgDamageReceivedPerCombat = ((decimal) TotalDamageReceived) / CurrentCombat;
         AvgTrueDamageReceivedPerCombat = ((decimal) TotalTrueDamageReceived) / CurrentCombat;
         AvgBlockedDamageReceivedPerCombat = ((decimal) TotalBlockedDamageReceived) / CurrentCombat;
+
+        AvgStrengthGainedPerCombat = ((decimal) TotalStrengthGained) / CurrentCombat;
+        AvgVulnerableAppliedPerCombat = ((decimal) TotalVulnerableApplied) / CurrentCombat;
+        AvgWeakAppliedPerCombat = ((decimal) TotalWeakApplied) / CurrentCombat;
+        AvgPoisonAppliedPerCombat = ((decimal) TotalPoisonApplied) / CurrentCombat;
+        AvgDoomAppliedPerCombat = ((decimal) TotalDoomApplied) / CurrentCombat;
     }
 
     public void RecordCombat()
     {
         Combats.Add(_currentCombat);
-        if (_currentCombat.TotalDamageDealt > BestCombat.TotalDamageDealt)
+        if (_currentCombat.TotalDamageDealt > HeroicCombat.TotalDamageDealt)
         {
-            BestCombat = _currentCombat;
+            HeroicCombat = _currentCombat;
         }
         if (_currentCombat.TotalTrueDamageReceived > NemesisCombat.TotalTrueDamageReceived)
         {

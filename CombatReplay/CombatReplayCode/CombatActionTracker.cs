@@ -350,6 +350,35 @@ public class CombatActionTracker : AbstractModel
         }
     }
 
+    public void RecordPower(PowerModel power, Creature target, Decimal amount, Creature? applier,
+        CardModel? cardSource)
+    {
+        if (amount <= 0) return;
+        
+        var isMyCard = cardSource != null && LocalContext.IsMe(cardSource.Owner);
+        
+        if (power.Title.GetFormattedText().Contains("Strength") && (IsMeOrMine(target) || isMyCard))
+        {
+            _db.TotalStrengthGained += (int) amount;
+        }
+        else if (power.Title.GetFormattedText().Contains("Vulnerable") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
+        {
+            _db.TotalVulnerableApplied += (int) amount;
+        }
+        else if (power.Title.GetFormattedText().Contains("Weak") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
+        {
+            _db.TotalWeakApplied += (int) amount;
+        }
+        else if (power.Title.GetFormattedText().Contains("Poison") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
+        {
+            _db.TotalPoisonApplied += (int) amount;
+        }
+        else if (power.Title.GetFormattedText().Contains("Doom") && (IsMeOrMine(applier) || isMyCard))
+        {
+            _db.TotalDoomApplied += (int) amount;
+        }
+    }
+
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
