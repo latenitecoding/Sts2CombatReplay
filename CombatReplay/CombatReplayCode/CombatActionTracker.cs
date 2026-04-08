@@ -30,6 +30,8 @@ public class CombatActionTracker : AbstractModel
     private bool _loadedSave;
     
     private CombatReplayDb _db = new();
+
+    private List<string> _statusCards = [ "Burn", "Dazed", "Wound", "Slimed", "Void" ];
     
     private void StartTracking()
     {
@@ -113,32 +115,32 @@ public class CombatActionTracker : AbstractModel
 
         if (_loadedSave) return;
         
-        WriteIt($"# Run starting as Player NetId `{LocalContext.NetId}` on Profile{_profileId} #");
+        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{_profileId} #");
         AfterActEntered();
     }
 
     public override Task AfterActEntered()
     {
         _db.NextAct();
-        WriteIt($"### Act {_db.CurrentAct} started ###");
+        WriteIt($"### Act {_db.CurrentAct} **started** ###");
         
         // each act starts with an 'Ancient' room which is handled implicitly by the game
         _db.NextRoom();
-        WriteIt($"##### Room: {_db.CurrentRoom} (`Ancient`) **entering** #####");
+        WriteIt($"##### Room: {_db.CurrentRoom} (`Ancient`) **entered** #####");
         
         return Task.CompletedTask;
     }
 
     public override Task AfterRoomEntered(AbstractRoom room)
     {
-        WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entering** #####");
+        WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entered** #####");
         return Task.CompletedTask;
     }
 
     public override Task BeforeCombatStart()
     {
         _db.StartCombat();
-        WriteIt($"=== Combat: {_db.CurrentCombat} **starting** ===");
+        WriteIt($"=== Combat: {_db.CurrentCombat} **started** ===");
         
         return Task.CompletedTask;
     }
@@ -359,29 +361,35 @@ public class CombatActionTracker : AbstractModel
         
         if (power.Title.GetFormattedText().Contains("Strength") && (IsMeOrMine(target) || isMyCard))
         {
+            WriteIt($"> {FormatCreature(target)} **buffed** [`Strength {(int) amount}`] <\\");
             _db.TotalStrengthGained += (int) amount;
         }
         else if (power.Title.GetFormattedText().Contains("Vulnerable") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
         {
+            WriteIt($"> {FormatCreature(target)} **debuffed** [`Vulnerable {(int) amount}`] <\\");
             _db.TotalVulnerableApplied += (int) amount;
         }
         else if (power.Title.GetFormattedText().Contains("Weak") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
         {
+            WriteIt($"> {FormatCreature(target)} **debuffed** [`Weak {(int) amount}`] <\\");
             _db.TotalWeakApplied += (int) amount;
         }
         else if (power.Title.GetFormattedText().Contains("Poison") && target.IsEnemy && (IsMeOrMine(applier) || isMyCard))
         {
+            WriteIt($"> {FormatCreature(target)} **debuffed** [`Poison {(int) amount}`] <\\");
             _db.TotalPoisonApplied += (int) amount;
         }
         else if (power.Title.GetFormattedText().Contains("Doom") && (IsMeOrMine(applier) || isMyCard))
         {
+            WriteIt($"> {FormatCreature(target)} **debuffed** [`Doom {(int) amount}`] <\\");
             _db.TotalDoomApplied += (int) amount;
         }
     }
 
     public void RecordCardCreated(Player owner, CardModel card)
     {
-        if (!LocalContext.IsMe(card.Owner) || !_db.InCombat) return;
+        if (_statusCards.Contains(card.Title)) return;
+        if (!LocalContext.IsMe(owner) || !_db.InCombat) return;
         WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
         _db.TotalCardsCreated += 1;
     }
@@ -438,19 +446,19 @@ public class CombatActionTracker : AbstractModel
         
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **using** `{cardSource.Title}` [`Damage {(int) amount}`] **against** {FormatCreature(target)} <\\");
+            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {(int) amount}`] **against** {FormatCreature(target)} <\\");
         }
         else if (dealer != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} [`Damage {(int) amount}`] **hitting** {FormatCreature(target)} <\\");
+            WriteIt($"> {FormatCreature(dealer)} [`Damage {(int) amount}`] **hit** {FormatCreature(target)} <\\");
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` [`Damage {(int) amount}`] **targeting** {FormatCreature(target)} <\\");
+            WriteIt($"> `{cardSource.Title}` [`Damage {(int) amount}`] **targeted** {FormatCreature(target)} <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **receiving** [`Damage {(int) amount}`] <\\");
+            WriteIt($"> {FormatCreature(target)} **received** [`Damage {(int) amount}`] <\\");
         }
 
         RecordDamageTotals(target, dealer, cardSource, (int) amount, target.CurrentHp, target.Block);
@@ -480,7 +488,7 @@ public class CombatActionTracker : AbstractModel
         RecordDamageTotals(target, dealer, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
         return Task.CompletedTask;
     }
-
+    
     public void OnCreatureHeal(Creature creature, Decimal amount)
     {
         if (_db.CurrentRoom <= 1) return;
@@ -636,18 +644,18 @@ public class CombatActionTracker : AbstractModel
     // current firing when a room is entered (except the first room)
     public void OnRoomExited()
     {
-        WriteIt($"##### Room: {_db.CurrentRoom} **exited** #####");
+        WriteIt($"=== Room: {_db.CurrentRoom} **exited** ===\\");
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
         _db.InProgressSave(_profileId);
         
         _db.NextRoom();
-        WriteIt($"##### Room: {_db.CurrentRoom} **entering** #####");
+        WriteIt($"##### Room: {_db.CurrentRoom} **entered** #####");
     }
 
     public void OnRunEnded(long startTime)
     {
-        WriteIt($"=== Run Ended ===");
+        WriteIt($"=== Run **ended** ===\\");
         TaskHelper.RunSafely(FinalizeHistory(startTime));
         _db.SaveRun(_profileId, startTime);
     }
