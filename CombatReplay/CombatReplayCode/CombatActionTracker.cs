@@ -398,7 +398,12 @@ public class CombatActionTracker : AbstractModel
 
     public void RecordCardCreated(Player owner, CardModel card, bool addedByPlayer = true)
     {
-        if (!addedByPlayer || !LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        if (!addedByPlayer)
+        {
+            WriteIt($"> {FormatPlayer(owner)} **given** `{card.Title}` <\\");
+            return;
+        }
         WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
         _db.TotalCardsCreated += 1;
     }
