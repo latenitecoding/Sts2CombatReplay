@@ -167,7 +167,7 @@ public class CombatActionTracker : AbstractModel
             WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
         }
 
-        _db.AddCombatCreature(creature);
+        _db.AddCombatCreature(creature, FormatCreature(creature));
         if (creature.IsEnemy)
         {
             _db.TotalEnemiesFought += 1;
@@ -683,9 +683,10 @@ public class CombatActionTracker : AbstractModel
 
     private static string FormatCreature(Creature creature)
     {
+        var shownHp = (creature.ShowsInfiniteHp) ? "Inf/Inf" : $"{creature.CurrentHp}/{creature.MaxHp}";
         return (creature.CombatId != null)
-            ? $"`{creature.Name}` (`{creature.CombatId}`) [`{creature.Block}|{creature.CurrentHp}/{creature.MaxHp}` bHP]"
-            : $"`{creature.Name}` (`{creature.ModelId}`) [`{creature.Block}|{creature.CurrentHp}/{creature.MaxHp}` bHP]";
+            ? $"`{creature.Name}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
+            : $"`{creature.Name}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
     }
 
     private static string FormatPlayer(Player player, bool useTitle = false)

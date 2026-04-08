@@ -99,6 +99,10 @@ public class CombatReplayDb
     public int BestSingleDamage { get; set; }
     public int BestSingleBlock { get; set; }
 
+    public CardStats? BestAttack;
+    public CardStats? BestDefend;
+    public CardStats? MostPlayedCard;
+
     private CombatStats _currentCombat = new();
     public CombatStats? HeroicCombat { get; set; }
     public CombatStats? NemesisCombat { get; set; }
@@ -185,26 +189,13 @@ public class CombatReplayDb
         }
     }
 
-    public void AddCombatCreature(Creature creature)
+    public void AddCombatCreature(Creature creature, string fmtTitle)
     {
-        MainFile.Logger.Info($"Adding creature {creature.Name}");
-        
         _currentCreatures.Add(creature);
-        _currentCreatures.Sort((c1, c2) => {
-            if (c1.CombatId.HasValue && c2.CombatId.HasValue)
-            {
-                return (int) (c1.CombatId.Value - c2.CombatId.Value);
-            }
-            if (c1.CombatId.HasValue)
-            {
-                return -1;
-            }
-            if (c2.CombatId.HasValue)
-            {
-                return 1;
-            }
-            return 0;
-        });
+        if (creature.IsEnemy)
+        {
+            _currentCombat.Enemies.Add(fmtTitle);
+        }
     }
     
     public IReadOnlyList<Creature> GetCombatCreatureList() => _currentCreatures;
@@ -229,7 +220,13 @@ public class CombatReplayDb
 
     public void AddCardPlay(string cardTitle)
     {
-        GetOrCreateCardStats(cardTitle).TimesPlayed++;
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        cardStats.TimesPlayed++;
+
+        if (MostPlayedCard == null || cardStats.TimesPlayed > MostPlayedCard.TimesPlayed)
+        {
+            MostPlayedCard = cardStats;
+        }
         
         BestSingleDamage = Math.Max(BestSingleDamage, _currentAttackDamage);
         BestSingleBlock = Math.Max(BestSingleBlock, _currentDefenseBlock);
@@ -241,7 +238,13 @@ public class CombatReplayDb
 
     public void AddDamageDealt(string cardTitle, int amount)
     {
-        GetOrCreateCardStats(cardTitle).TotalDamageDealt += amount;
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        cardStats.TotalDamageDealt += amount;
+
+        if (BestAttack == null || cardStats.TotalDamageDealt > BestAttack.TotalDamageDealt)
+        {
+            BestAttack = cardStats;
+        }
 
         _currentTurnDamage += amount;
         if (cardTitle == _prevCardPlay)
@@ -284,7 +287,13 @@ public class CombatReplayDb
 
     public void AddBlockGained(string cardTitle, int amount)
     {
-        GetOrCreateCardStats(cardTitle).TotalBlockGained += amount;
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        cardStats.TotalBlockGained += amount;
+
+        if (BestDefend == null || cardStats.TotalBlockGained > BestDefend.TotalBlockGained)
+        {
+            BestDefend = cardStats;
+        }
 
         _currentTurnBlock += amount;
         if (cardTitle == _prevCardPlay)
@@ -373,6 +382,8 @@ public class CombatReplayDb
     public class CombatStats
     {
         public int CombatId { get; set; }
+        public List<string> Enemies { get; set; }
+        
         public int TotalTurns { get; set; }
         
         public int TotalDamageDealt { get; set; }
