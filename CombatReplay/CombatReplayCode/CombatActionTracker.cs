@@ -386,14 +386,13 @@ public class CombatActionTracker : AbstractModel
         }
     }
 
-    public void RecordCardCreated(Player owner, CardModel card)
+    public void RecordCardCreated(Player owner, CardModel card, bool addedByPlayer = true)
     {
-        if (_statusCards.Contains(card.Title)) return;
-        if (!LocalContext.IsMe(owner) || !_db.InCombat) return;
+        if (!addedByPlayer || !LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
         _db.TotalCardsCreated += 1;
     }
-
+    
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
@@ -412,7 +411,7 @@ public class CombatActionTracker : AbstractModel
     
     public void RecordEnemyIntent(Creature owner, MoveState state)
     {
-        if (!_db.InCombat) return;
+        if (!_db.IsInCombat()) return;
         var intentions = string.Join(
             ", ",
             state.Intents.Select(intention => {

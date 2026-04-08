@@ -1,6 +1,8 @@
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
@@ -11,16 +13,18 @@ public class CreateCardPatch
 {
     static MethodBase TargetMethod()
     {
-        return AccessTools.Method(typeof(CombatState), "CreateCard",
+        return AccessTools.Method(typeof(CardPileCmd), "AddGeneratedCardToCombat",
             new Type[]
             {
                 typeof(CardModel),
-                typeof(Player)
+                typeof(PileType),
+                typeof(bool),
+                typeof(CardPilePosition)
             });
     }
 
-    static void Prefix(CardModel canonicalCard, Player owner)
+    static void Prefix(CardModel card, bool addedByPlayer)
     {
-        MainFile.Tracker.RecordCardCreated(owner, canonicalCard);
+        MainFile.Tracker.RecordCardCreated(card.Owner, card, addedByPlayer);
     }
 }

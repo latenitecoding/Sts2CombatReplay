@@ -24,7 +24,7 @@ public class CombatReplayDb
     public int CurrentRoom { get; set; }
     public int CurrentCombat { get; set; }
     public int CurrentTurn { get; set; }
-    public bool InCombat { get; set; }
+    private bool _inCombat;
     
     public int TotalTurnsPlayed { get; set; }
     public int TotalEnemiesFought { get; set; }
@@ -120,7 +120,7 @@ public class CombatReplayDb
     {
         CurrentCombat += 1;
         CurrentTurn = 0;
-        InCombat = true;
+        _inCombat = true;
 
         _currentCombat = new CombatStats()
         {
@@ -130,7 +130,7 @@ public class CombatReplayDb
 
     public void EndCombat()
     {
-        InCombat = false;
+        _inCombat = false;
         
         SetBestCardTurnStats();
         SetAverages();
@@ -138,6 +138,8 @@ public class CombatReplayDb
         
         _currentCreatures.Clear();
     }
+    
+    public bool IsInCombat() => _inCombat;
 
     private void SetBestCardTurnStats()
     {
