@@ -108,6 +108,13 @@ public class CombatActionTracker : AbstractModel
             }
         }
     }
+
+    public void RecordSeed(string seed)
+    {
+        if (_db.RunSeed != null) return;
+        WriteIt($"=== Run **seeded** `{seed}` ===\\");
+        _db.RunSeed = seed;
+    }
     
     public void OnRunStarted()
     {

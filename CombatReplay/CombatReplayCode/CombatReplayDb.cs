@@ -20,6 +20,7 @@ public class CombatReplayDb
         return null;
     }
     
+    public string? RunSeed { get; set; }
     public int CurrentAct { get; set; }
     public int CurrentRoom { get; set; }
     public int CurrentCombat { get; set; }
