@@ -262,11 +262,11 @@ public class CombatActionTracker : AbstractModel
 
         var dynamicVars = string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
         
-        var enchantment= card.Enchantment?.Title.ToString() ?? "";
-        var affliction = card.Affliction?.Title.ToString() ?? "";
+        var enchantment= $"`{card.Enchantment?.Title.GetFormattedText()}`" ?? "";
+        var affliction = $"`{card.Affliction?.Title.GetFormattedText()}`" ?? "";
 
         var replayCount = card.GetEnchantedReplayCount();
-        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount.ToString()}`]" : "";
+        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount}`]" : "";
         
         var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
