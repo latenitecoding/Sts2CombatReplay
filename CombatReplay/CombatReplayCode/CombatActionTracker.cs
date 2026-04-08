@@ -112,7 +112,6 @@ public class CombatActionTracker : AbstractModel
     public void RecordSeed(string seed)
     {
         if (_db.RunSeed != null) return;
-        WriteIt($"=== Run **seeded** `{seed}` ===\\");
         _db.RunSeed = seed;
     }
     
@@ -123,6 +122,10 @@ public class CombatActionTracker : AbstractModel
         if (_loadedSave) return;
         
         WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{_profileId} #");
+        if (_db.RunSeed != null)
+        {
+            WriteIt($"=== Run **seeded** `{_db.RunSeed}` ===\\");
+        }
         AfterActEntered();
     }
 

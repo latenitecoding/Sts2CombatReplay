@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -7,8 +8,11 @@ namespace CombatReplay.CombatReplayCode;
 
 public class CombatReplayDb
 {
-    private static JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
-    
+    private static JsonSerializerOptions _jsonOptions = new() { 
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     public static CombatReplayDb? LoadFromFile(int? profileId)
     {
         var savePath = GetSavePath(profileId);
@@ -100,16 +104,16 @@ public class CombatReplayDb
     public int BestSingleDamage { get; set; }
     public int BestSingleBlock { get; set; }
 
-    public CardStats? BestAttack;
-    public CardStats? BestDefend;
-    public CardStats? MostPlayedCard;
+    public Dictionary<string, CardStats> BestAttack { get; init; } = [];
+    public Dictionary<string, CardStats> BestDefend { get; init; } = [];
+    public Dictionary<string, CardStats> MostPlayedCard { get; init; } = [];
 
-    private CombatStats _currentCombat = new();
+    private CombatStats _currentCombat = new CombatStats() { Enemies = [] };
     public CombatStats? HeroicCombat { get; set; }
     public CombatStats? NemesisCombat { get; set; }
-    public List<CombatStats> Combats { get; set; } = new();
+    public List<CombatStats> Combats { get; init; } = [];
 
-    private List<Creature> _currentCreatures = new();
+    private List<Creature> _currentCreatures = [];
 
     public void NextAct() => CurrentAct += 1;
     public void NextRoom() => CurrentRoom += 1;
@@ -127,10 +131,7 @@ public class CombatReplayDb
         CurrentTurn = 0;
         _inCombat = true;
 
-        _currentCombat = new CombatStats()
-        {
-            CombatId = CurrentCombat
-        };
+        _currentCombat.CombatId = CurrentCombat;
     }
 
     public void EndCombat()
@@ -142,6 +143,7 @@ public class CombatReplayDb
         RecordCombat();
         
         _currentCreatures.Clear();
+        _currentCombat = new CombatStats() { Enemies = [] };
     }
     
     public bool IsInCombat() => _inCombat;
@@ -161,20 +163,20 @@ public class CombatReplayDb
 
     private void SetAverages()
     {
-        AvgDamagePerTurn = ((decimal) TotalDamage) / TotalTurnsPlayed;
-        AvgBlockPerTurn = ((decimal) TotalBlockGained) / TotalTurnsPlayed;
-        
-        AvgDamagePerCombat = ((decimal) TotalDamage) / CurrentCombat;
-        AvgBlockPerCombat = ((decimal) TotalBlockGained) / CurrentCombat;
-        AvgDamageReceivedPerCombat = ((decimal) TotalDamageReceived) / CurrentCombat;
-        AvgTrueDamageReceivedPerCombat = ((decimal) TotalTrueDamageReceived) / CurrentCombat;
-        AvgBlockedDamageReceivedPerCombat = ((decimal) TotalBlockedDamageReceived) / CurrentCombat;
+        AvgDamagePerTurn = Math.Round(((decimal)TotalDamage) / TotalTurnsPlayed, 2);
+        AvgBlockPerTurn = Math.Round(((decimal)TotalBlockGained) / TotalTurnsPlayed, 2);
 
-        AvgStrengthGainedPerCombat = ((decimal) TotalStrengthGained) / CurrentCombat;
-        AvgVulnerableAppliedPerCombat = ((decimal) TotalVulnerableApplied) / CurrentCombat;
-        AvgWeakAppliedPerCombat = ((decimal) TotalWeakApplied) / CurrentCombat;
-        AvgPoisonAppliedPerCombat = ((decimal) TotalPoisonApplied) / CurrentCombat;
-        AvgDoomAppliedPerCombat = ((decimal) TotalDoomApplied) / CurrentCombat;
+        AvgDamagePerCombat = Math.Round(((decimal)TotalDamage) / CurrentCombat, 2);
+        AvgBlockPerCombat = Math.Round(((decimal)TotalBlockGained) / CurrentCombat, 2);
+        AvgDamageReceivedPerCombat = Math.Round(((decimal)TotalDamageReceived) / CurrentCombat, 2);
+        AvgTrueDamageReceivedPerCombat = Math.Round(((decimal)TotalTrueDamageReceived) / CurrentCombat, 2);
+        AvgBlockedDamageReceivedPerCombat = Math.Round(((decimal)TotalBlockedDamageReceived) / CurrentCombat, 2);
+
+        AvgStrengthGainedPerCombat = Math.Round(((decimal)TotalStrengthGained) / CurrentCombat, 2);
+        AvgVulnerableAppliedPerCombat = Math.Round(((decimal)TotalVulnerableApplied) / CurrentCombat, 2);
+        AvgWeakAppliedPerCombat = Math.Round(((decimal)TotalWeakApplied) / CurrentCombat, 2);
+        AvgPoisonAppliedPerCombat = Math.Round(((decimal)TotalPoisonApplied) / CurrentCombat, 2);
+        AvgDoomAppliedPerCombat = Math.Round(((decimal)TotalDoomApplied) / CurrentCombat, 2);
     }
 
     public void RecordCombat()
@@ -201,7 +203,7 @@ public class CombatReplayDb
     
     public IReadOnlyList<Creature> GetCombatCreatureList() => _currentCreatures;
 
-    public Dictionary<string, CardStats> CardPlayStats { get; set; } = new();
+    public Dictionary<string, CardStats> CardPlayStats { get; init; } = new();
 
     private static string TitleToKey(string cardTitle)
     {
@@ -224,9 +226,10 @@ public class CombatReplayDb
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesPlayed++;
 
-        if (MostPlayedCard == null || cardStats.TimesPlayed > MostPlayedCard.TimesPlayed)
+        if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
         {
-            MostPlayedCard = cardStats;
+            MostPlayedCard.Clear();
+            MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
         }
         
         BestSingleDamage = Math.Max(BestSingleDamage, _currentAttackDamage);
@@ -242,9 +245,10 @@ public class CombatReplayDb
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TotalDamageDealt += amount;
 
-        if (BestAttack == null || cardStats.TotalDamageDealt > BestAttack.TotalDamageDealt)
+        if (BestAttack.Count == 0 || cardStats.TotalDamageDealt > BestAttack.Values.First().TotalDamageDealt)
         {
-            BestAttack = cardStats;
+            BestAttack.Clear();
+            BestAttack[TitleToKey(cardTitle)] = cardStats;
         }
 
         _currentTurnDamage += amount;
@@ -291,9 +295,10 @@ public class CombatReplayDb
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TotalBlockGained += amount;
 
-        if (BestDefend == null || cardStats.TotalBlockGained > BestDefend.TotalBlockGained)
+        if (BestDefend.Count == 0 || cardStats.TotalBlockGained > BestDefend.Values.First().TotalBlockGained)
         {
-            BestDefend = cardStats;
+            BestDefend.Clear();
+            BestDefend[TitleToKey(cardTitle)] = cardStats;
         }
 
         _currentTurnBlock += amount;
@@ -383,7 +388,7 @@ public class CombatReplayDb
     public class CombatStats
     {
         public int CombatId { get; set; }
-        public List<string> Enemies { get; set; }
+        public required List<string> Enemies { get; init; }
         
         public int TotalTurns { get; set; }
         
