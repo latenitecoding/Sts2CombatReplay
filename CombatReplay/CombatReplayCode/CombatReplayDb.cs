@@ -50,8 +50,8 @@ public class CombatReplayDb
     public int TotalPetDamage { get; set; }
     public int TotalPetDamageReceived { get; set; }
     
-    public int TotalAnonymousDamage { get; set; }
-    public int TotalAnonymousBlock { get; set; }
+    public int TotalRelicPowerDamage { get; set; }
+    public int TotalRelicPowerBlock { get; set; }
     
     public Decimal AvgDamagePerTurn { get; set; }
     public Decimal AvgBlockPerTurn { get; set; }

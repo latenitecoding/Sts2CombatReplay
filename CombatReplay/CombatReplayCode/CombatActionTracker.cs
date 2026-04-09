@@ -427,19 +427,19 @@ public class CombatActionTracker : AbstractModel
         
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {(int) amount}`] **against** {FormatCreature(target)} <\\");
+            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target)} <\\");
         }
         else if (dealer != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} [`Damage {(int) amount}`] **hit** {FormatCreature(target)} <\\");
+            WriteIt($"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\");
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` [`Damage {(int) amount}`] **targeted** {FormatCreature(target)} <\\");
+            WriteIt($"> `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **targeted** {FormatCreature(target)} <\\");
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **received** [`Damage {(int) amount}`] <\\");
+            WriteIt($"> {FormatCreature(target)} **received** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\");
         }
 
         RecordDamageTotals(target, dealer, cardSource, (int) amount, target.CurrentHp, target.Block);
@@ -510,7 +510,7 @@ public class CombatActionTracker : AbstractModel
         }
         else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
         {
-            _db.TotalAnonymousDamage += totalDamage;
+            _db.TotalRelicPowerDamage += totalDamage;
         }
     }
     
@@ -542,7 +542,7 @@ public class CombatActionTracker : AbstractModel
         }
         else
         {
-            _db.TotalAnonymousBlock += (int) amount;
+            _db.TotalRelicPowerBlock += (int) amount;
         }
         return Task.CompletedTask;
     }
