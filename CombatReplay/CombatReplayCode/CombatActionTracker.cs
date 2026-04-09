@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
@@ -22,10 +21,9 @@ public class CombatActionTracker : AbstractModel
 {
     // Required by AbstractModel; used for hooking into ModHelper
     public override bool ShouldReceiveCombatHooks => true;
-    
-    private readonly ConcurrentQueue<string> _queue = new();
-    private Task? _writerTask;
-    private CancellationTokenSource? _cts;
+
+    private readonly Lock _writerLock = new();
+    private StreamWriter? _writer;
 
     private int? _profileId;
     private string? _savePath;
@@ -52,67 +50,34 @@ public class CombatActionTracker : AbstractModel
         _savePath = GetSavePath(saveManager.CurrentProfileId, _db.IsMultiplayer);
         MainFile.Logger.Info($"CombatReplay save path set to `{_savePath}`");
 
-        if (saveManager.HasRunSave)
+        lock (_writerLock)
         {
-            MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
-            _db = CombatReplayDb.LoadFromFile(_profileId, _db.IsMultiplayer) ?? _db;
-            _loadedSave = true;
+            if (saveManager.HasRunSave)
+            {
+                MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
+                _db = CombatReplayDb.LoadFromFile(_profileId, _db.IsMultiplayer) ?? _db;
+                _loadedSave = true;
+                _writer = new StreamWriter(_savePath, append: true);
+            }
+            else
+            {
+                if (File.Exists(_savePath))
+                {
+                    MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
+                }
+                _writer = new StreamWriter(_savePath, append: false);
+            }
         }
-        else if (_savePath != null)
-        {
-            MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
-            File.Create(_savePath).Close();
-        }
-
-        _cts = new CancellationTokenSource();
-        _writerTask = Task.Run(() => WriterLoop(_cts.Token));
     }
 
-    private async Task StopTracking()
+    private void StopTracking()
     {
-        if (_writerTask == null) return;
-        if (_cts != null) await _cts.CancelAsync();
-        await _writerTask;
-        _writerTask = null;
+        lock (_writerLock)
+        {
+            _writer?.Close();
+            _writer = null;
+        }
         MainFile.Logger.Info($"CombatReplay tracking stopped");
-    }
-
-    private async Task WriterLoop(CancellationToken ct)
-    {
-        try
-        {
-            if (_savePath != null)
-            {
-                await using var writer = new StreamWriter(_savePath, append: true);
-                while (!ct.IsCancellationRequested)
-                {
-                    while (_queue.TryDequeue(out var entry))
-                    {
-                        await writer.WriteLineAsync(entry);
-                    }
-
-                    await writer.FlushAsync(ct);
-                    await Task.Delay(100, ct);
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            MainFile.Logger.Info("WriterLoop operation cancelled");
-        }
-        finally
-        {
-            MainFile.Logger.Info("Draining entries remaining in queue");
-
-            if (_savePath != null)
-            {
-                await using var writer = new StreamWriter(_savePath, append: true);
-                while (_queue.TryDequeue(out var entry))
-                {
-                    await writer.WriteLineAsync(entry);
-                }
-            }
-        }
     }
 
     public void RecordSeed(string seed)
@@ -671,21 +636,19 @@ public class CombatActionTracker : AbstractModel
         _db.SaveRun(_profileId, startTime);
     }
 
-    private async Task FinalizeHistory(long startTime)
+    private Task FinalizeHistory(long startTime)
     {
-        await StopTracking();
+        StopTracking();
 
-        if (_profileId.HasValue)
-        {
-            var finalPath = GetHistoryPath(_profileId.Value, startTime);
-            if (_savePath != null && File.Exists(_savePath) && finalPath != null)
-            {
-                File.Move(_savePath, finalPath, overwrite: true);
-                MainFile.Logger.Info($"Combat history saved to: {finalPath}");
-                
-                _savePath = null;
-            }
-        }       
+        if (!_profileId.HasValue) return Task.CompletedTask;
+        
+        var finalPath = GetHistoryPath(_profileId.Value, startTime);
+        if (_savePath == null || finalPath == null ||  !File.Exists(_savePath)) return Task.CompletedTask;
+        
+        File.Move(_savePath, finalPath, overwrite: true);
+        MainFile.Logger.Info($"Combat history saved to: {finalPath}");
+        
+        return Task.CompletedTask;
     }
 
     private static string FormatCard(CardModel card)
@@ -760,9 +723,10 @@ public class CombatActionTracker : AbstractModel
     
     private void WriteIt(string msg)
     {
-        if (_writerTask != null)
+        lock (_writerLock)
         {
-            _queue.Enqueue(msg);
+            _writer?.WriteLine(msg);
+            _writer?.Flush();
         }
     }
 }
