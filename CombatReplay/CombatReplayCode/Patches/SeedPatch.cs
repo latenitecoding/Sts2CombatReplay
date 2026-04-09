@@ -1,7 +1,7 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Multiplayer.Game.Lobby;
 
-namespace CombatReplay.CombatReplayCode;
+namespace CombatReplay.CombatReplayCode.Patches;
 
 [HarmonyPatch(typeof(StartRunLobby), "BeginRunForAllPlayers")]
 public class SeedPatch

@@ -1,0 +1,44 @@
+using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
+
+namespace CombatReplay.CombatReplayCode.Trackers;
+
+public partial class CombatReplayTracker
+{
+    public override Task AfterEnergyReset(Player player)
+    {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
+        var currentEnergy = player.PlayerCombatState?.Energy ?? player.MaxEnergy;
+        WriteIt($"> {FormatPlayer(player)} **reset** `{currentEnergy}/{player.MaxEnergy}` energy <\\");
+        return Task.CompletedTask;
+    }
+
+    public void OnEnergyGained(Decimal amount)
+    {
+        WriteIt($"> I **gained** `{(int) amount}` energy <\\");
+        _db.TotalEnergyGained += (int) amount;
+    }
+    
+    public override Task AfterEnergySpent(CardModel card, int amount)
+    {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        WriteIt($"> {FormatCard(card)} **cost** `{amount}` energy <\\");
+        _db.TotalEnergySpent += amount;
+        return Task.CompletedTask;
+    }
+    
+    private static string FormatPlayer(Player player, bool useTitle = false)
+    {
+        var playerName = (LocalContext.IsMe(player) && !useTitle) ? "I" : $"Player: `{player.Character.Title.GetFormattedText()}`";
+        return (player.Creature.CombatId != null)
+            ? $"{playerName} (`{player.Creature.CombatId}`)"
+            : $"{playerName} (`{player.NetId}`)";
+    }
+    
+    private static bool IsMeOrMine(Creature? creature)
+    {
+        return creature != null && (LocalContext.IsMe(creature) || (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner)));
+    }
+}

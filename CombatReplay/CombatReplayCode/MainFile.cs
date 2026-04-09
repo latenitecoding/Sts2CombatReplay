@@ -8,6 +8,8 @@ using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode;
+using Patches;
+using Trackers;
 
 //You're recommended but not required to keep all your code in this package and all your assets in the RunReplay folder.
 [ModInitializer(nameof(Initialize))]
@@ -18,9 +20,9 @@ public partial class MainFile : Node
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
 
-    public static readonly CombatActionTracker Tracker = new();
+    public static readonly CombatReplayTracker Tracker = new();
     
-    private static void OnRunStarted(RunState state) => Tracker.OnRunStarted();
+    private static void OnRunStarted(RunState state) => Tracker.OnRunStart();
     private static void OnRoomExited() => Tracker.OnRoomExited();
 
     public static void Initialize()

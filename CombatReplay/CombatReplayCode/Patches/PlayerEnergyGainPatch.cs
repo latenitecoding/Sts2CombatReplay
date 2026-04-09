@@ -1,8 +1,7 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Saves;
 
-namespace CombatReplay.CombatReplayCode;
+namespace CombatReplay.CombatReplayCode.Patches;
 
 [HarmonyPatch(typeof(PlayerCombatState), "GainEnergy")]
 public class PlayerEnergyGainPatch

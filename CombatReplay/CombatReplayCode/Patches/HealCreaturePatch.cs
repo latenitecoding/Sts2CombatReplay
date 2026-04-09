@@ -2,7 +2,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 
-namespace CombatReplay.CombatReplayCode;
+namespace CombatReplay.CombatReplayCode.Patches;
 
 [HarmonyPatch(typeof(CreatureCmd), "Heal")]
 public class HealCreaturePatch

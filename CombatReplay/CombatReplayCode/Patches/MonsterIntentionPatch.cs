@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Random;
 
-namespace CombatReplay.CombatReplayCode;
+namespace CombatReplay.CombatReplayCode.Patches;
 
 [Harmony]
 public class MonsterIntentionPatch

@@ -1,8 +1,7 @@
-using GodotPlugins.Game;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.GameActions;
 
-namespace CombatReplay.CombatReplayCode;
+namespace CombatReplay.CombatReplayCode.Patches;
 
 [HarmonyPatch(typeof(PlayCardAction), "ExecuteAction")]
 public class PlayCardPatch
