@@ -1,3 +1,4 @@
+using CombatReplay.CombatReplayCode.Tracker;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
@@ -9,7 +10,7 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode;
 using Patches;
-using Trackers;
+using Tracker;
 
 //You're recommended but not required to keep all your code in this package and all your assets in the RunReplay folder.
 [ModInitializer(nameof(Initialize))]

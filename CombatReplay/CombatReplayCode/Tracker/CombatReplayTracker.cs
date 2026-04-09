@@ -1,3 +1,5 @@
+using CombatReplay.CombatReplayCode.ReplayDb;
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
@@ -5,9 +7,7 @@ using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
-namespace CombatReplay.CombatReplayCode.Trackers;
-using ReplayDb;
-using Utils;
+namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker : AbstractModel
 {
