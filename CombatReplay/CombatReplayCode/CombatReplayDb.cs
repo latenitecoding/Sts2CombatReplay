@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -13,9 +12,9 @@ public class CombatReplayDb
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    public static CombatReplayDb? LoadFromFile(int? profileId)
+    public static CombatReplayDb? LoadFromFile(int? profileId, bool isMultiplayer)
     {
-        var savePath = GetSavePath(profileId);
+        var savePath = GetSavePath(profileId, isMultiplayer);
         if (File.Exists(savePath))
         {
             return JsonSerializer.Deserialize<CombatReplayDb>(File.ReadAllText(savePath));
@@ -23,7 +22,8 @@ public class CombatReplayDb
 
         return null;
     }
-    
+
+    public bool IsMultiplayer { get; set; }
     public string? RunSeed { get; set; }
     public int CurrentAct { get; set; }
     public int CurrentRoom { get; set; }
@@ -316,12 +316,12 @@ public class CombatReplayDb
 
     public void InProgressSave(int? profileId)
     {
-        File.WriteAllText(GetSavePath(profileId), JsonSerializer.Serialize(this, _jsonOptions));
+        File.WriteAllText(GetSavePath(profileId, IsMultiplayer), JsonSerializer.Serialize(this, _jsonOptions));
     }
 
     public void SaveRun(int? profileId, long startTime)
     {
-        var savePath = GetSavePath(profileId);
+        var savePath = GetSavePath(profileId, IsMultiplayer);
         File.WriteAllText(savePath, JsonSerializer.Serialize(this, _jsonOptions));
 
         if (profileId.HasValue)
@@ -334,11 +334,11 @@ public class CombatReplayDb
         }
     }
     
-    private static string GetSavePath(int? profileId)
+    private static string GetSavePath(int? profileId, bool isMultiplayer)
     {
         var backupPath = Path.Combine(
             ProjectSettings.GlobalizePath("user://"),
-            "sts2_combat_stats_current.json"
+            isMultiplayer ? "sts2_combat_stats_current_mp.json" : "sts2_combat_stats_current.json"
         );
 
         if (!profileId.HasValue)
@@ -353,7 +353,7 @@ public class CombatReplayDb
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                "sts2_combat_stats_current.json"
+                isMultiplayer ? "sts2_combat_stats_current_mp.json" : "sts2_combat_stats_current.json"
             ))
             .FirstOrDefault(backupPath);
     }

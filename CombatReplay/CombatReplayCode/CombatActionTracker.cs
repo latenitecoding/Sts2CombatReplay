@@ -10,7 +10,9 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -31,8 +33,6 @@ public class CombatActionTracker : AbstractModel
     
     private CombatReplayDb _db = new();
 
-    private List<string> _statusCards = [ "Burn", "Dazed", "Wound", "Slimed", "Void" ];
-    
     private void StartTracking()
     {
         MainFile.Logger.Info($"CombatReplay tracking started");
@@ -41,15 +41,21 @@ public class CombatActionTracker : AbstractModel
         
         MainFile.Logger.Info($"SaveManager Profile ID {saveManager.CurrentProfileId}");
         MainFile.Logger.Info($"SaveManager Has Save: {saveManager.HasRunSave}");
+
+        _db.IsMultiplayer = RunManager.Instance.NetService.Type.IsMultiplayer();
+
+        MainFile.Logger.Info(_db.IsMultiplayer
+            ? "RunManager is starting a Multiplayer run"
+            : "RunManager is starting a Singleplayer run");
         
         _profileId =  saveManager.CurrentProfileId;
-        _savePath = GetSavePath(saveManager.CurrentProfileId);
+        _savePath = GetSavePath(saveManager.CurrentProfileId, _db.IsMultiplayer);
         MainFile.Logger.Info($"CombatReplay save path set to `{_savePath}`");
 
         if (saveManager.HasRunSave)
         {
             MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
-            _db = CombatReplayDb.LoadFromFile(_profileId) ?? _db;
+            _db = CombatReplayDb.LoadFromFile(_profileId, _db.IsMultiplayer) ?? _db;
             _loadedSave = true;
         }
         else if (_savePath != null)
@@ -253,6 +259,12 @@ public class CombatActionTracker : AbstractModel
         return Task.CompletedTask;
     }
 
+    private readonly Dictionary<string, string> _specialDynamicVars = new()
+    {
+        ["Uppercut"] = "`Damage 13`, `Weak 1`, `Vulnerable 1`",
+        ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
+    };
+
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
@@ -260,10 +272,12 @@ public class CombatActionTracker : AbstractModel
         var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
         var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
 
-        var dynamicVars = string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
+        var dynamicVars = (_specialDynamicVars.TryGetValue(card.Title, out var value))
+            ? value
+            : string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
         
-        var enchantment= $"`{card.Enchantment?.Title.GetFormattedText()}`" ?? "";
-        var affliction = $"`{card.Affliction?.Title.GetFormattedText()}`" ?? "";
+        var enchantment = (card.Enchantment != null) ? $"`{card.Enchantment.Title.GetFormattedText()}`" : "";
+        var affliction = (card.Affliction != null) ? $"`{card.Affliction.Title.GetFormattedText()}`" : "";
 
         var replayCount = card.GetEnchantedReplayCount();
         var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount}`]" : "";
@@ -303,15 +317,9 @@ public class CombatActionTracker : AbstractModel
     public override Task AfterPotionUsed(PotionModel potion, Creature? target)
     {
         var prefix = (LocalContext.IsMe(potion.Owner)) ? "I" : "Another";
-        if (target != null)
-        {
-            WriteIt($"> _{prefix} **used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\");
-        }
-        else
-        {
-            WriteIt($"> _{prefix} **used** `{potion.Title.GetFormattedText()}`_ <\\");
-        }
-
+        WriteIt(target != null
+            ? $"> _{prefix} **used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\"
+            : $"> _{prefix} **used** `{potion.Title.GetFormattedText()}`_ <\\");
         if (LocalContext.IsMe(potion.Owner))
         {
             _db.TotalPotionsUsed += 1;
@@ -346,15 +354,9 @@ public class CombatActionTracker : AbstractModel
     public void RecordCardPlayed(PlayCardAction action)
     {
         var card = action.NetCombatCard.ToCardModel();
-        if (action.Target != null)
-        {
-            WriteIt($"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)} **targeting** {FormatCreature(action.Target)}_ <\\");
-        }
-        else
-        {
-            WriteIt($"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
-        }
-
+        WriteIt(action.Target != null
+            ? $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)} **targeting** {FormatCreature(action.Target)}_ <\\"
+            : $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
         if (LocalContext.IsMe(card.Owner))
         {
             _db.TotalCardsPlayed += 1;
@@ -507,7 +509,7 @@ public class CombatActionTracker : AbstractModel
     {
         if (_db.CurrentRoom <= 1) return;
         var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
-        WriteIt($"> {FormatCreature(creature)} **healed** `{(int) trueAmount}` HP <\\");
+        WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP <\\");
         if (!LocalContext.IsMe(creature)) return;
         _db.TotalHpHealed += trueAmount;
     }
@@ -562,14 +564,9 @@ public class CombatActionTracker : AbstractModel
 
     public override Task AfterBlockGained(Creature creature, Decimal amount, ValueProp props, CardModel? cardSource)
     {
-        if (cardSource != null)
-        {
-            WriteIt($"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {amount}`] <\\");
-        }
-        else
-        {
-            WriteIt($"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\");
-        }
+        WriteIt(cardSource != null
+            ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {amount}`] <\\"
+            : $"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\");
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         
@@ -712,11 +709,11 @@ public class CombatActionTracker : AbstractModel
             : $"{playerName} (`{player.NetId}`)";
     }
     
-    private static string GetSavePath(int? profileId)
+    private static string GetSavePath(int? profileId, bool isMultiplayer)
     {
         var backupPath = Path.Combine(
             ProjectSettings.GlobalizePath("user://"),
-            "sts2_combat_tracker_current.replay"
+            isMultiplayer ? "sts2_combat_tracker_current_mp.replay" : "sts2_combat_tracker_current.replay"
         );
 
         if (!profileId.HasValue)
