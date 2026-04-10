@@ -13,7 +13,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> I **discarded** {FormatCard(card)} <\\");
+        WriteIt($"> I **discarded** `{card}` <\\");
         _db.OnCardDiscarded(card.Title);
         return Task.CompletedTask;
     }
@@ -33,7 +33,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted++;
-        WriteIt($"> I **exhausted** {FormatCard(card)} <\\");
+        WriteIt($"> I **exhausted** `{card.Title}` <\\");
         return Task.CompletedTask;
     }
     

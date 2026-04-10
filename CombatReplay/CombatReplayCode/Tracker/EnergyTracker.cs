@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
@@ -18,7 +17,7 @@ public partial class CombatReplayTracker
     public override Task AfterEnergySpent(CardModel card, int amount)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> {FormatCard(card)} **cost** `{amount}` energy <\\");
+        WriteIt($"> `{card.Title}` **cost** `{amount}` energy <\\");
         _db.TotalEnergySpent += amount;
         return Task.CompletedTask;
     }

@@ -17,7 +17,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> I **drew** {GetCardDescription(card)} <\\");
+        WriteIt($"> I **drew** {FormatCard(card)} <\\");
         _db.OnCardDrawn(card.Title);
         return Task.CompletedTask;
     }
@@ -27,10 +27,10 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         if (!addedByPlayer)
         {
-            WriteIt($"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
+            WriteIt($"> {FormatPlayer(owner)} **was** **given** {FormatCard(card)} <\\");
             return;
         }
-        WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
+        WriteIt($"> {FormatPlayer(owner)} **created** {FormatCard(card)} <\\");
         _db.TotalCardsCreated += 1;
     }
     
@@ -38,8 +38,8 @@ public partial class CombatReplayTracker
     {
         var card = action.NetCombatCard.ToCardModel();
         WriteIt(action.Target != null
-            ? $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)} **targeting** {FormatCreature(action.Target)}_ <\\"
-            : $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
+            ? $"> _{FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)}_ <\\"
+            : $"> _{FormatPlayer(action.Player)} **played** `{card.Title}`_ <\\");
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }
@@ -48,16 +48,11 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
-        WriteIt($"> {FormatPlayer(owner)} **gained** {GetCardDescription(replacement)} <\\");
+        WriteIt($"> {FormatPlayer(owner)} **gained** {FormatCard(replacement)} <\\");
         _db.TotalCardsCreated += 1;
     }
     
-    private static string FormatCard(CardModel card)
-    {
-        return $"`{card.Title}`";
-    }
-
-    private string GetCardDescription(CardModel card)
+    private string FormatCard(CardModel card)
     {
         var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
         var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
@@ -76,7 +71,7 @@ public partial class CombatReplayTracker
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
 
         return card.CurrentStarCost > 0 || card.HasStarCostX
-            ? $"{FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
-            : $"{FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
+            ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
+            : $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
     }
 }
