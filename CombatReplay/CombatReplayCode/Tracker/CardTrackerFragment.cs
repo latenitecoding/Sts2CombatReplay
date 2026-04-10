@@ -43,7 +43,7 @@ public partial class CombatReplayTracker
             WriteIt($"> I **drew** {FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy <\\");
         }
 
-        _db.TotalCardsDrawn += 1;
+        _db.OnCardDrawn(card.Title);
         return Task.CompletedTask;
     }
     

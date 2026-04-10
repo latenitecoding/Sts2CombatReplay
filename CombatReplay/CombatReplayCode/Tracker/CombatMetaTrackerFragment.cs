@@ -13,8 +13,8 @@ public partial class CombatReplayTracker
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsDiscarded += 1;
         WriteIt($"> I **discarded** {FormatCard(card)} <\\");
+        _db.OnCardDiscarded(card.Title);
         return Task.CompletedTask;
     }
 
@@ -32,7 +32,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsExhausted += 1;
+        _db.TotalCardsExhausted++;
         WriteIt($"> I **exhausted** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
@@ -40,7 +40,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardRetained(CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsRetained += 1;
+        _db.TotalCardsRetained++;
         WriteIt($"> I **retained** {FormatCard(card)} <\\");
         return Task.CompletedTask;
     }
@@ -54,7 +54,7 @@ public partial class CombatReplayTracker
     public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
-        _db.TotalEmptyHands += 1;
+        _db.TotalEmptyHands++;
         WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
         return Task.CompletedTask;
     }
@@ -64,7 +64,7 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         
         _db.OnNextTurn();
-        WriteIt($"Turn: {_db.CurrentTurn} **started**");
+        WriteIt($"=== Turn: {_db.CurrentTurn} **started** ===");
 
         foreach (var creature in _db.GetCombatCreatureList())
         {
@@ -97,7 +97,7 @@ public partial class CombatReplayTracker
             : $"> _{prefix} **used** `{potion.Title.GetFormattedText()}`_ <\\");
         if (LocalContext.IsMe(potion.Owner))
         {
-            _db.TotalPotionsUsed += 1;
+            _db.TotalPotionsUsed++;
         }
         return Task.CompletedTask;
     }
@@ -105,7 +105,7 @@ public partial class CombatReplayTracker
     public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
     {
         if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
-        _db.TotalDeckShuffles += 1;
+        _db.TotalDeckShuffles++;
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** <\\");
         return Task.CompletedTask;
     }
@@ -115,10 +115,10 @@ public partial class CombatReplayTracker
         switch (side)
         {
             case CombatSide.Player:
-                WriteIt("> Player phase **ended** <\\");
+                WriteIt("=== Player phase **ended** ===\\");
                 break;
             case CombatSide.Enemy:
-                WriteIt($"> Turn: {_db.CurrentTurn} **ended** <\\");
+                WriteIt($"=== Turn: {_db.CurrentTurn} **ended** ===\\");
                 break;
             case CombatSide.None:
             default:

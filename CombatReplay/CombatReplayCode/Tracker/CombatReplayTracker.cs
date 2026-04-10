@@ -42,6 +42,7 @@ public partial class CombatReplayTracker : AbstractModel
 
         MainFile.Logger.Info("Initializing CombatReplayDb...");
 
+        if (_db.CurrentAct != 0) _db = new CombatReplayDb();
         _db = hasSave
             ? CombatReplayDb.LoadFromFileOrElse(profileId, isMultiplayer, "sts2_combat_stats_current.json", _db)
             : _db.Init(profileId, isMultiplayer, "sts2_combat_stats_current.json");

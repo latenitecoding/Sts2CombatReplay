@@ -51,11 +51,25 @@ public partial class CombatReplayDb
         }
     }
 
+    public void OnCardDiscarded(string cardTitle)
+    {
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        cardStats.TimesDiscarded++;
+        TotalCardsDiscarded++;
+    }
+
+    public void OnCardDrawn(string cardTitle)
+    {
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        cardStats.TimesDrawn++;
+        TotalCardsDrawn++;
+    }
+
     public void OnExecuteCard(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesPlayed++;
-        TotalCardsPlayed += 1;
+        TotalCardsPlayed++;
 
         if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
         {
