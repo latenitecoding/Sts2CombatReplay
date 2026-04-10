@@ -6,6 +6,8 @@ public class CardStats
     public int TimesDrawn { get; set; }
     public int TimesDiscarded { get; set; }
     
+    public Decimal PlayToDrawRatio { get; set; }
+    
     public int TotalDamageDealt { get; set; }
     public int TotalBlockGained { get; set; }
 }

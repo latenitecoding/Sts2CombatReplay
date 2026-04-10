@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace CombatReplay.CombatReplayCode.ReplayDb;
 
@@ -16,6 +17,8 @@ public partial class CombatReplayDb
     public Dictionary<string, CardStats> BestAttack { get; init; } = [];
     public Dictionary<string, CardStats> BestDefend { get; init; } = [];
     public Dictionary<string, CardStats> MostPlayedCard { get; init; } = [];
+    public Dictionary<string, CardStats> MostLikedCard { get; init; } = [];
+    public Dictionary<string, CardStats> MostIgnoredCard { get; init; } = [];
      
     public void AddBlockGainedByCard(string cardTitle, int amount)
     {
@@ -62,13 +65,27 @@ public partial class CombatReplayDb
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesDrawn++;
+        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesDrawn, 2);
         TotalCardsDrawn++;
+
+        if (MostLikedCard.Count == 0 || cardStats.PlayToDrawRatio > MostLikedCard.Values.First().PlayToDrawRatio)
+        {
+            MostLikedCard.Clear();
+            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
+        }
+
+        if (MostIgnoredCard.Count == 0 || cardStats.PlayToDrawRatio < MostIgnoredCard.Values.First().PlayToDrawRatio)
+        {
+            MostIgnoredCard.Clear();
+            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
+        }
     }
 
     public void OnExecuteCard(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesPlayed++;
+        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesDrawn, 2);
         TotalCardsPlayed++;
 
         if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
@@ -77,6 +94,18 @@ public partial class CombatReplayDb
             MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
         }
 
+        if (MostLikedCard.Count == 0 || cardStats.PlayToDrawRatio > MostLikedCard.Values.First().PlayToDrawRatio)
+        {
+            MostLikedCard.Clear();
+            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
+        }
+
+        if (MostIgnoredCard.Count == 0 || cardStats.PlayToDrawRatio < MostIgnoredCard.Values.First().PlayToDrawRatio)
+        {
+            MostIgnoredCard.Clear();
+            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
+        }
+        
         UpdateCardStats();
         _prevCardPlay = cardTitle;
     }
