@@ -45,7 +45,7 @@ public partial class CombatReplayTracker
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **received** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\");
+            WriteIt($"> {FormatCreature(target)} **took** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\");
         }
         
         _db.OnCombatDamageDealt(dealer, target, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
@@ -77,7 +77,7 @@ public partial class CombatReplayTracker
         }
         else
         {
-            WriteIt($"> {FormatCreature(target)} **received** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\");
+            WriteIt($"> {FormatCreature(target)} **took** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\");
         }
 
         // this is called when damage is lethal; amount should always be the full amount while the others should reflect damage dealt to the creature

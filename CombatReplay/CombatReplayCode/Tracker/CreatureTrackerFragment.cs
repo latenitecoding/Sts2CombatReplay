@@ -23,7 +23,6 @@ public partial class CombatReplayTracker
 
     public Task OnAddCreature(Creature creature)
     {
-        if (!_db.IsInCombat()) return Task.CompletedTask;
         var designation = (creature.IsEnemy)
             ? "Enemy"
             : ((creature.IsPet)
@@ -50,6 +49,7 @@ public partial class CombatReplayTracker
     
     public void OnRollMove(Creature owner, MoveState state)
     {
+        // this action is called twice when entering a room with combat; this filters out the first
         if (!_db.IsInCombat()) return;
         var intentions = string.Join(
             ", ",

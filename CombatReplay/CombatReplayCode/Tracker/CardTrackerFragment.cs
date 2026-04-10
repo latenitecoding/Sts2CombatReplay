@@ -52,7 +52,7 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         if (!addedByPlayer)
         {
-            WriteIt($"> {FormatPlayer(owner)} **given** `{card.Title}` <\\");
+            WriteIt($"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
             return;
         }
         WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");

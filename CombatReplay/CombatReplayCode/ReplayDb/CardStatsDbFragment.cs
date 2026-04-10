@@ -84,12 +84,11 @@ public partial class CombatReplayDb
         _currentAttackDamage = 0;
         _currentDefenseBlock = 0;
     }
-    
-    [GeneratedRegex(@"\+\d*$")]
-    private static partial Regex TitleToKeyRegex();
+
+    private static readonly Regex TitleToKeyRegex = new(@"\+\d*$", RegexOptions.Compiled);
     
     private static string TitleToKey(string cardTitle)
     {
-        return TitleToKeyRegex().Replace(cardTitle, "").Trim();
+        return TitleToKeyRegex.Replace(cardTitle, "");
     }
 }
