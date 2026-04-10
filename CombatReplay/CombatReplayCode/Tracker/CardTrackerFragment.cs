@@ -17,32 +17,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        
-        var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
-        var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
-
-        var dynamicVars = (_specialDynamicVars.TryGetValue(card.Title, out var value))
-            ? value
-            : string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
-        
-        var enchantment = (card.Enchantment != null) ? $"`{card.Enchantment.Title.GetFormattedText()}`" : "";
-        var affliction = (card.Affliction != null) ? $"`{card.Affliction.Title.GetFormattedText()}`" : "";
-
-        var replayCount = card.GetEnchantedReplayCount();
-        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount}`]" : "";
-        
-        var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
-        var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
-
-        if (card.CurrentStarCost > 0 || card.HasStarCostX)
-        {
-            WriteIt($"> I **drew** {FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars <\\");
-        }
-        else
-        {
-            WriteIt($"> I **drew** {FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy <\\");
-        }
-
+        WriteIt($"> I **drew** {GetCardDescription(card)} <\\");
         _db.OnCardDrawn(card.Title);
         return Task.CompletedTask;
     }
@@ -68,9 +43,40 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }
+
+    public void OnTransformCard(Player owner, CardModel original, CardModel replacement)
+    {
+        if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
+        WriteIt($"> {FormatPlayer(owner)} **gained** {GetCardDescription(replacement)} <\\");
+        _db.TotalCardsCreated += 1;
+    }
     
     private static string FormatCard(CardModel card)
     {
         return $"`{card.Title}`";
+    }
+
+    private string GetCardDescription(CardModel card)
+    {
+        var keywords = string.Join(", ", card.Keywords.Select(keyword => $"`{keyword}`"));
+        var tags = string.Join(", ", card.Tags.Select(tag => $"`{tag}`"));
+
+        var dynamicVars = (_specialDynamicVars.TryGetValue(card.Title, out var value))
+            ? value
+            : string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
+        
+        var enchantment = (card.Enchantment != null) ? $"`{card.Enchantment.Title.GetFormattedText()}`" : "";
+        var affliction = (card.Affliction != null) ? $"`{card.Affliction.Title.GetFormattedText()}`" : "";
+
+        var replayCount = card.GetEnchantedReplayCount();
+        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount}`]" : "";
+        
+        var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
+        var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
+
+        return card.CurrentStarCost > 0 || card.HasStarCostX
+            ? $"{FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
+            : $"{FormatCard(card)} [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
     }
 }

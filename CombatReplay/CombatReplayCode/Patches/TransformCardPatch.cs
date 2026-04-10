@@ -25,7 +25,7 @@ public class TransformCardPatch
     {
         foreach (var transformation in transformations)
         {
-            MainFile.Tracker.OnAddGeneratedCard(transformation.Original.Owner, transformation.Replacement ?? transformation.Original);
+            MainFile.Tracker.OnTransformCard(transformation.Original.Owner, transformation.Original, transformation.Replacement ?? transformation.Original);
         }
     }
 }
