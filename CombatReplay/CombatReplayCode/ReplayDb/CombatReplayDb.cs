@@ -14,7 +14,7 @@ public partial class CombatReplayDb
     {
         var savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile);
         return File.Exists(savePath)
-            ? JsonSerializer.Deserialize<CombatReplayDb>(savePath, JsonOptions)?
+            ? JsonSerializer.Deserialize<CombatReplayDb>(File.ReadAllText(savePath), JsonOptions)?
                 .Init(profileId, saveFile, savePath) ?? db.Init(profileId, isMultiplayer, saveFile)
             : db.Init(profileId, isMultiplayer, saveFile);
     }
@@ -25,6 +25,7 @@ public partial class CombatReplayDb
 
     public CombatReplayDb Init(int profileId, bool isMultiplayer, string saveFile)
     {
+        IsMultiplayer = isMultiplayer;
         return Init(profileId, saveFile, FileUtils.GetSavePath(profileId, isMultiplayer, saveFile));
     }
 

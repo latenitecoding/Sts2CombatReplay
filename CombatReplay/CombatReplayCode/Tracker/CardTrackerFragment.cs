@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -46,15 +47,26 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public void RecordCardPlayed(PlayCardAction action)
+    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer = true)
+    {
+        if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        if (!addedByPlayer)
+        {
+            WriteIt($"> {FormatPlayer(owner)} **given** `{card.Title}` <\\");
+            return;
+        }
+        WriteIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\");
+        _db.TotalCardsCreated += 1;
+    }
+    
+    public void OnExecuteCard(PlayCardAction action)
     {
         var card = action.NetCombatCard.ToCardModel();
         WriteIt(action.Target != null
             ? $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)} **targeting** {FormatCreature(action.Target)}_ <\\"
             : $"> _{FormatPlayer(action.Player)} **played** {FormatCard(card)}_ <\\");
         if (!LocalContext.IsMe(card.Owner)) return;
-        _db.TotalCardsPlayed += 1;
-        _db.AddCardPlay(card.Title);
+        _db.OnExecuteCard(card.Title);
     }
     
     private static string FormatCard(CardModel card)

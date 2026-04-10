@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Random;
 
 namespace CombatReplay.CombatReplayCode.Patches;
 
-[Harmony]
+[HarmonyPatch]
 public class MonsterIntentionPatch
 {
     static MethodBase TargetMethod()
@@ -22,6 +22,6 @@ public class MonsterIntentionPatch
 
     static void Postfix(Creature owner, MoveState __result)
     {
-        MainFile.Tracker.RecordEnemyIntent(owner, __result);
+        MainFile.Tracker.OnRollMove(owner, __result);
     }
 }

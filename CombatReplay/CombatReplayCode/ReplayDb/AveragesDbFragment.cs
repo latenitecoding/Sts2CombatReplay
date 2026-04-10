@@ -1,8 +1,3 @@
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using MegaCrit.Sts2.Core.Entities.Creatures;
-using CombatReplay.CombatReplayCode.Utils;
-
 namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public partial class CombatReplayDb
@@ -16,7 +11,7 @@ public partial class CombatReplayDb
     public Decimal AvgTrueDamageReceivedPerCombat { get; set; }
     public Decimal AvgBlockedDamageReceivedPerCombat { get; set; }
     
-    public Decimal AvgPowersPlayedPerCombat { get; set; }
+    public Decimal AvgPowersAppliedtoSelfPerCombat { get; set; }
     
     public Decimal AvgStrengthGainedPerCombat { get; set; }
     public Decimal AvgVulnerableAppliedPerCombat { get; set; }
@@ -24,7 +19,7 @@ public partial class CombatReplayDb
     public Decimal AvgPoisonAppliedPerCombat { get; set; }
     public Decimal AvgDoomAppliedPerCombat { get; set; }
     
-    private void SetAverages()
+    private void UpdateAverages()
     {
         AvgDamagePerTurn = Math.Round(((decimal)TotalDamage) / TotalTurnsPlayed, 2);
         AvgBlockPerTurn = Math.Round(((decimal)TotalBlockGained) / TotalTurnsPlayed, 2);
@@ -35,7 +30,7 @@ public partial class CombatReplayDb
         AvgTrueDamageReceivedPerCombat = Math.Round(((decimal)TotalTrueDamageReceived) / CurrentCombat, 2);
         AvgBlockedDamageReceivedPerCombat = Math.Round(((decimal)TotalBlockedDamageReceived) / CurrentCombat, 2);
         
-        AvgPowersPlayedPerCombat = Math.Round(((decimal)TotalPowersPlayed) / CurrentCombat, 2);
+        AvgPowersAppliedtoSelfPerCombat = Math.Round(((decimal)TotalPowersAppliedToSelf) / CurrentCombat, 2);
 
         AvgStrengthGainedPerCombat = Math.Round(((decimal)TotalStrengthGained) / CurrentCombat, 2);
         AvgVulnerableAppliedPerCombat = Math.Round(((decimal)TotalVulnerableApplied) / CurrentCombat, 2);

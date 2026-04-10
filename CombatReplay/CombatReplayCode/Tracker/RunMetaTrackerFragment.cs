@@ -7,12 +7,9 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    public void RecordSeed(string seed)
-    {
-        if (_runSeed != null) return;
-        _runSeed = seed;
-    }
-
+    private string? _runSeed;
+    
+    // isn't currently being called by the game
     public override Task AfterActEntered()
     {
         _db.NextAct();
@@ -25,12 +22,6 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
 
-    public override Task AfterRoomEntered(AbstractRoom room)
-    {
-        WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entered** #####");
-        return Task.CompletedTask;
-    }
-    
     public override Task AfterPotionDiscarded(PotionModel potion)
     {
         if (!LocalContext.IsMe(potion.Owner)) return Task.CompletedTask;
@@ -38,7 +29,13 @@ public partial class CombatReplayTracker
         _db.TotalPotionsDiscarded += 1;
         return Task.CompletedTask;
     }
-    
+ 
+    public override Task AfterRoomEntered(AbstractRoom room)
+    {
+        WriteIt($"##### Room: {_db.CurrentRoom} (`{room.RoomType.ToString()}`) **entered** #####");
+        return Task.CompletedTask;
+    }
+
     public void OnCreatureHeal(Creature creature, Decimal amount)
     {
         if (_db.CurrentRoom <= 1) return;
@@ -58,5 +55,12 @@ public partial class CombatReplayTracker
         
         _db.NextRoom();
         WriteIt($"##### Room: {_db.CurrentRoom} **entered** #####");
+    }
+    
+    public void UpdateSeed(string seed)
+    {
+        if (_runSeed != null) return;
+        _runSeed = seed;
+        _db.RunSeed = seed;
     }
 }

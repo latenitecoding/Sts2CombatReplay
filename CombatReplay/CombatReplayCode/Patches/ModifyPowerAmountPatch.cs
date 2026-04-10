@@ -24,6 +24,6 @@ public class ModifyPowerAmountPatch
  
     static void Prefix(PowerModel power, Decimal offset, Creature? applier, CardModel? cardSource)
     {
-        MainFile.Tracker.RecordPower(power, power.Owner, offset, applier, cardSource);
+        MainFile.Tracker.OnApplyPower(power, power.Owner, offset, applier, cardSource);
     }
 }

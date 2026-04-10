@@ -8,6 +8,7 @@ public class PlayerEnergyGainPatch
 {
     static void Postfix(Decimal amount)
     {
-        MainFile.Tracker.OnEnergyGained(amount);
+        // I believe this only fires for the local player
+        MainFile.Tracker.OnGainEnergy(amount);
     }
 }

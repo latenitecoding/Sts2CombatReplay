@@ -10,19 +10,60 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    public override Task BeforeCombatStart()
+    public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
-        _db.StartCombat();
-        WriteIt($"=== Combat: {_db.CurrentCombat} **started** ===");
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        _db.TotalCardsDiscarded += 1;
+        WriteIt($"> I **discarded** {FormatCard(card)} <\\");
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterCombatEnd(CombatRoom room)
+    {
+        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===\\");
+        _db.OnEndCombat();
+    
+        MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
+        _db.InProgressSave();
         
         return Task.CompletedTask;
     }
+
+    public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
+    {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        _db.TotalCardsExhausted += 1;
+        WriteIt($"> I **exhausted** {FormatCard(card)} <\\");
+        return Task.CompletedTask;
+    }
     
+    public override Task AfterCardRetained(CardModel card)
+    {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        _db.TotalCardsRetained += 1;
+        WriteIt($"> I **retained** {FormatCard(card)} <\\");
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterCombatVictory(CombatRoom room)
+    {
+        WriteIt($"=== Combat: {_db.CurrentCombat} **was** `victory` ===\\");
+        return Task.CompletedTask;
+    }
+    
+    public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
+    {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
+        _db.TotalEmptyHands += 1;
+        WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
+        return Task.CompletedTask;
+    }
+   
     public override Task AfterPlayerTurnStart(PlayerChoiceContext ctx, Player player)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         
-        _db.NextTurn();
+        _db.OnNextTurn();
         WriteIt($"Turn: {_db.CurrentTurn} **started**");
 
         foreach (var creature in _db.GetCombatCreatureList())
@@ -37,16 +78,14 @@ public partial class CombatReplayTracker
         }
 
         var pcs = player.PlayerCombatState;
-        if (pcs != null)
-        {
-            var handSize = pcs.Hand.Cards.Count;
-            var deckSize = pcs.DrawPile.Cards.Count;
-            var discardSize = pcs.DiscardPile.Cards.Count;
-            var exhaustSize = pcs.ExhaustPile.Cards.Count;
-            WriteIt($"> {FormatPlayer(player)} **have** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
-        }
+        if (pcs == null) return Task.CompletedTask;
         
-        _db.TotalTurnsPlayed += 1;
+        var handSize = pcs.Hand.Cards.Count;
+        var deckSize = pcs.DrawPile.Cards.Count;
+        var discardSize = pcs.DiscardPile.Cards.Count;
+        var exhaustSize = pcs.ExhaustPile.Cards.Count;
+        WriteIt($"> {FormatPlayer(player)} **have** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
+        
         return Task.CompletedTask;       
     }
     
@@ -62,51 +101,6 @@ public partial class CombatReplayTracker
         }
         return Task.CompletedTask;
     }
-    
-    public override Task AfterCardRetained(CardModel card)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsRetained += 1;
-        WriteIt($"> I **retained** {FormatCard(card)} <\\");
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsDiscarded += 1;
-        WriteIt($"> I **discarded** {FormatCard(card)} <\\");
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsExhausted += 1;
-        WriteIt($"> I **exhausted** {FormatCard(card)} <\\");
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterTurnEnd(PlayerChoiceContext ctx, CombatSide side)
-    {
-        if (side == CombatSide.Player)
-        {
-            WriteIt("> Player phase **ended** <\\");
-        }
-        else if (side == CombatSide.Enemy)
-        {
-            WriteIt($"> Turn: {_db.CurrentTurn} **ended** <\\");
-        }
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
-    {
-        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
-        _db.TotalEmptyHands += 1;
-        WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
-        return Task.CompletedTask;
-    }
 
     public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
     {
@@ -115,21 +109,29 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** <\\");
         return Task.CompletedTask;
     }
-
-    public override Task AfterCombatEnd(CombatRoom room)
-    {
-        _db.EndCombat();
-        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===\\");
     
-        MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
-        _db.InProgressSave();
-        
+    public override Task AfterTurnEnd(PlayerChoiceContext ctx, CombatSide side)
+    {
+        switch (side)
+        {
+            case CombatSide.Player:
+                WriteIt("> Player phase **ended** <\\");
+                break;
+            case CombatSide.Enemy:
+                WriteIt($"> Turn: {_db.CurrentTurn} **ended** <\\");
+                break;
+            case CombatSide.None:
+            default:
+                break;
+        }
         return Task.CompletedTask;
     }
-
-    public override Task AfterCombatVictory(CombatRoom room)
+  
+    public override Task BeforeCombatStart()
     {
-        WriteIt($"=== Combat: {_db.CurrentCombat} **was** `victory` ===\\");
+        _db.OnStartCombat();
+        WriteIt($"=== Combat: {_db.CurrentCombat} **started** ===");
+        
         return Task.CompletedTask;
     }
 }

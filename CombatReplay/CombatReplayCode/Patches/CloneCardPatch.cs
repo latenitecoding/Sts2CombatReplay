@@ -19,6 +19,6 @@ public class CloneCardPatch
 
     static void Prefix(CardModel mutableCard)
     {
-        MainFile.Tracker.RecordCardCreated(mutableCard.Owner, mutableCard);
+        MainFile.Tracker.OnAddGeneratedCard(mutableCard.Owner, mutableCard);
     }
 }

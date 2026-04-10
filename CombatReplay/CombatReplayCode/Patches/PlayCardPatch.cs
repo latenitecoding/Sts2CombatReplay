@@ -8,6 +8,6 @@ public class PlayCardPatch
 {
    static void Prefix(PlayCardAction __instance)
    {
-      MainFile.Tracker.RecordCardPlayed(__instance);
+      MainFile.Tracker.OnExecuteCard(__instance);
    } 
 }

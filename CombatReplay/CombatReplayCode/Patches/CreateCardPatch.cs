@@ -1,9 +1,7 @@
 using System.Reflection;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Patches;
@@ -25,6 +23,6 @@ public class CreateCardPatch
 
     static void Prefix(CardModel card, bool addedByPlayer)
     {
-        MainFile.Tracker.RecordCardCreated(card.Owner, card, addedByPlayer);
+        MainFile.Tracker.OnAddGeneratedCard(card.Owner, card, addedByPlayer);
     }
 }

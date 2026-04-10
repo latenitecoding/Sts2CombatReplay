@@ -8,6 +8,6 @@ public class SeedPatch
 {
     static void Postfix(string seed)
     {
-        MainFile.Tracker.RecordSeed(seed);
+        MainFile.Tracker.UpdateSeed(seed);
     }
 }

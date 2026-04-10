@@ -14,12 +14,6 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatPlayer(player)} **reset** `{currentEnergy}/{player.MaxEnergy}` energy <\\");
         return Task.CompletedTask;
     }
-
-    public void OnEnergyGained(Decimal amount)
-    {
-        WriteIt($"> I **gained** `{(int) amount}` energy <\\");
-        _db.TotalEnergyGained += (int) amount;
-    }
     
     public override Task AfterEnergySpent(CardModel card, int amount)
     {
@@ -28,17 +22,18 @@ public partial class CombatReplayTracker
         _db.TotalEnergySpent += amount;
         return Task.CompletedTask;
     }
-    
+
+    public void OnGainEnergy(Decimal amount)
+    {
+        WriteIt($"> I **gained** `{(int) amount}` energy <\\");
+        _db.TotalEnergyGained += (int) amount;
+    }
+   
     private static string FormatPlayer(Player player, bool useTitle = false)
     {
         var playerName = (LocalContext.IsMe(player) && !useTitle) ? "I" : $"Player: `{player.Character.Title.GetFormattedText()}`";
         return (player.Creature.CombatId != null)
             ? $"{playerName} (`{player.Creature.CombatId}`)"
             : $"{playerName} (`{player.NetId}`)";
-    }
-    
-    private static bool IsMeOrMine(Creature? creature)
-    {
-        return creature != null && (LocalContext.IsMe(creature) || (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner)));
     }
 }

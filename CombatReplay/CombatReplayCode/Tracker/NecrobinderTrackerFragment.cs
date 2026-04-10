@@ -9,7 +9,7 @@ public partial class CombatReplayTracker
 {
     public override Task AfterOstyRevived(Creature osty)
     {
-        if (IsMeOrMine(osty))
+        if (osty is { IsPet: true } && LocalContext.IsMe(osty.PetOwner)) 
         {
             WriteIt($"> My {FormatCreature(osty)} **revived** <\\");
             _db.TotalOstyRevives += 1;

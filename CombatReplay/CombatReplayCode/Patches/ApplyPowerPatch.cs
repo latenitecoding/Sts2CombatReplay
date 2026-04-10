@@ -24,6 +24,6 @@ public class ApplyPowerPatch
     }
     static void Prefix(PowerModel power, Creature target, Decimal amount, Creature? applier, CardModel? cardSource)
     {
-        MainFile.Tracker.RecordPower(power, target, amount, applier, cardSource);
+        MainFile.Tracker.OnApplyPower(power, target, amount, applier, cardSource);
     }
 }

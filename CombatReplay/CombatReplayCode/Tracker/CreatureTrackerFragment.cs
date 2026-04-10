@@ -8,8 +8,22 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    public Task OnCreatureAdded(Creature creature)
+    public override Task AfterBlockBroken(Creature creature)
     {
+        WriteIt($"> {FormatCreature(creature)} **broken** <\\");
+        return Task.CompletedTask;
+    }
+    
+    public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
+        float deathAnimLength)
+    {
+        WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
+        return Task.CompletedTask; 
+    }
+
+    public Task OnAddCreature(Creature creature)
+    {
+        if (!_db.IsInCombat()) return Task.CompletedTask;
         var designation = (creature.IsEnemy)
             ? "Enemy"
             : ((creature.IsPet)
@@ -30,50 +44,25 @@ public partial class CombatReplayTracker
             WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
         }
 
-        _db.AddCombatCreature(creature, FormatCreature(creature));
-        if (creature.IsEnemy)
-        {
-            _db.TotalEnemiesFought += 1;
-        }
+        _db.OnAddCreature(creature, FormatCreature(creature));
         return Task.CompletedTask;
     }
     
-    public void RecordEnemyIntent(Creature owner, MoveState state)
+    public void OnRollMove(Creature owner, MoveState state)
     {
         if (!_db.IsInCombat()) return;
         var intentions = string.Join(
             ", ",
             state.Intents.Select(intention => {
-                if (intention is AttackIntent attackIntention)
-                {
-                    var dmg = attackIntention.DamageCalc?.Invoke() ?? -1;
-                    if (attackIntention.Repeats > 1)
-                    {
-                        return $"`{intention.IntentType.ToString()} {(int) dmg}x{attackIntention.Repeats}`";
-                    }
-                    else
-                    {
-                        return $"`{intention.IntentType.ToString()} {(int) dmg}`";
-                    }
-                }
-                return $"`{intention.IntentType.ToString()}`";
+                if (intention is not AttackIntent attackIntention) return $"`{intention.IntentType.ToString()}`";
+                var dmg = attackIntention.DamageCalc?.Invoke() ?? -1;
+                return attackIntention.Repeats > 1
+                    ? $"`{intention.IntentType.ToString()} {(int) dmg}x{attackIntention.Repeats}`"
+                    : $"`{intention.IntentType.ToString()} {(int) dmg}`";
             }));
         WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}] <\\");
     }
-    
-    public override Task AfterBlockBroken(Creature creature)
-    {
-        WriteIt($"> {FormatCreature(creature)} **broken** <\\");
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
-        float deathAnimLength)
-    {
-        WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
-        return Task.CompletedTask; 
-    }
-    
+   
     private static string FormatCreature(Creature creature)
     {
         var shownHp = (creature.ShowsInfiniteHp) ? "Inf/Inf" : $"{creature.CurrentHp}/{creature.MaxHp}";

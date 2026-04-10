@@ -2,7 +2,7 @@ using Godot;
 
 namespace CombatReplay.CombatReplayCode.Utils;
 
-public class FileUtils
+public static class FileUtils
 {
     public static string GetSavePath(int profileId, bool isMultiplayer, string saveFile) 
     {
@@ -13,7 +13,7 @@ public class FileUtils
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                saveFile
+                isMultiplayer ? AsMultiplayer(saveFile) : saveFile
             ))
             .FirstOrDefault(GetDefaultSavePath(isMultiplayer, saveFile));
     }
@@ -32,14 +32,23 @@ public class FileUtils
             .FirstOrDefault();
         if (destDir == null) return null;
         Directory.CreateDirectory(destDir);
+        return Path.Combine(destDir, WithStartTime(saveFile, startTime));
+    }
+
+    private static string AsMultiplayer(string saveFile)
+    {
         var split = saveFile.Split(".");
-        return Path.Combine(destDir, $"{split[0]}_{startTime}.{split[1]}");
+        return $"{split[0]}_mp.{split[1]}";
+    }
+
+    private static string WithStartTime(string saveFile, long startTime)
+    {
+        var split = saveFile.Split(".");
+        return $"{split[0]}_{startTime}.{split[1]}";
     }
     
     private static string GetDefaultSavePath(bool isMultiplayer, string saveFile)
     {
-        if (!isMultiplayer) return Path.Combine(ProjectSettings.GlobalizePath("user://"), saveFile);
-        var split = saveFile.Split(".");
-        return Path.Combine(ProjectSettings.GlobalizePath("user://"), $"{split[0]}_mp.{split[1]}");           
+        return Path.Combine(ProjectSettings.GlobalizePath("user://"), isMultiplayer ? AsMultiplayer(saveFile) : saveFile);
     }
 }
