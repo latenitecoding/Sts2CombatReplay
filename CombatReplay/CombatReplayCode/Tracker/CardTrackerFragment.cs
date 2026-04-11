@@ -15,19 +15,30 @@ public partial class CombatReplayTracker
         ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
     };
 
-    private readonly HashSet<string> _playerCreatedCards = [];
+    private readonly HashSet<CardModel> _addedCards = [];
+    private readonly HashSet<CardModel> _enteredCards = [];
+    private readonly HashSet<CardModel> _generatedCards = [];
+
+    private void ClearTrackedCreatedCards()
+    {
+        _addedCards.Clear();
+        _enteredCards.Clear();
+        _generatedCards.Clear();
+    }
 
     public override Task AfterCardEnteredCombat(CardModel card)
     {
-        WriteIt($"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} <\\");
-        _db.OnCardCreated(card.Title, _playerCreatedCards.Contains(card.Title), card.Pile is { Type: PileType.Hand });
+        if (_addedCards.Contains(card) || _generatedCards.Contains(card)) return Task.CompletedTask;
+        _enteredCards.Add(card);
+        WriteIt($"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} (@ `{card.Pile?.Type.ToString() ?? "N/A"}`) <\\");
+        _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
         return Task.CompletedTask;
     }
 
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> I **drew** {FormatCard(card)} <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} <\\");
         _db.OnCardDrawn(card.Title);
         return Task.CompletedTask;
     }
@@ -35,21 +46,25 @@ public partial class CombatReplayTracker
     public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
-        if (addedByPlayer) _playerCreatedCards.Add(card.Title);
+        if (_addedCards.Contains(card) || _enteredCards.Contains(card)) return;
+        _generatedCards.Add(card);
         WriteIt(addedByPlayer
-            ? $"> {FormatPlayer(owner)} **created** `{card.Title}` <\\"
-            : $"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
+            ? $"> {FormatPlayer(owner)} **created** {FormatCard(card)} (@ `{card.Pile?.Type.ToString() ?? "N/A"}`) <\\"
+            : $"> {FormatPlayer(owner)} **was** **given** {FormatCard(card)} (@ `{card.Pile?.Type.ToString() ?? "N/A"}`) <\\");
     }
 
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
-        WriteIt($"> {FormatPlayer(card.Owner)} **added** `{card.Title}` **to** `{pileType.ToString()}` <\\");
+        if (_enteredCards.Contains(card) || _generatedCards.Contains(card)) return;
+        _addedCards.Add(card);
+        WriteIt($"> {FormatPlayer(card.Owner)} **added** {FormatCard(card)} (@ `{pileType.ToString()}`) <\\");
         _db.OnCardAdded(card.Title, pileType == PileType.Hand);
     }
     
     public void OnExecuteCard(PlayCardAction action)
     {
+        ClearTrackedCreatedCards();
         var card = action.NetCombatCard.ToCardModel();
         WriteIt(action.Target != null
             ? $"> _{FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)}_ <\\"
