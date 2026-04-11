@@ -118,7 +118,10 @@ public partial class CombatReplayDb
 
     private void UpdatePlayFromHandRatio(string cardTitle, CardStats cardStats)
     {
-        cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
+        if (cardStats.TimesAddedToHand > 0)
+        {
+            cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
+        }
 
         if (MostLikedCard.Count == 0 || cardStats.PlayFromHandRatio > MostLikedCard.Values.First().PlayFromHandRatio)
         {

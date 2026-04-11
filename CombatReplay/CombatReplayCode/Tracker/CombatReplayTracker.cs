@@ -44,7 +44,6 @@ public partial class CombatReplayTracker : AbstractModel
 
         MainFile.Logger.Info("Initializing CombatReplayDb...");
 
-        if (_db.CurrentAct != 0) _db = new CombatReplayDb();
         _db = (isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)
             ? CombatReplayDb.LoadFromFileOrElse(
                 saveManager.CurrentProfileId,

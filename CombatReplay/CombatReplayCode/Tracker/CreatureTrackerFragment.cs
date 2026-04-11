@@ -44,6 +44,8 @@ public partial class CombatReplayTracker
     
     public void OnCreatureHeal(Creature creature, Decimal amount)
     {
+        // because of ascension levels, after the tutorial run, all characters start at 0 HP and then heal in the first room
+        // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
         if (_db.CurrentRoom <= 1) return;
         var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
         WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP <\\");

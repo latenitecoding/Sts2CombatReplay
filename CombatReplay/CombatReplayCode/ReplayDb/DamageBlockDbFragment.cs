@@ -87,7 +87,7 @@ public partial class CombatReplayDb
         }
         else if (LocalContext.IsMe(target) || (target is { IsPet: true } && LocalContext.IsMe(target.PetOwner)))
         {
-            if (target is { IsPet: true }) TotalPetDamageReceived += totalDamage - target.Block;
+            if (target is { IsPet: true }) TotalPetDamageReceived += totalDamage;
             else
             {
                 AddCombatDamageReceived(totalDamage, trueDamage, blockedDamage);

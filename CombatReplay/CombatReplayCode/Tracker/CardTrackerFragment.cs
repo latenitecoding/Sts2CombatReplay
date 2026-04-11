@@ -102,6 +102,7 @@ public partial class CombatReplayTracker
     
     public void OnExecuteCard(PlayCardAction action)
     {
+        // unlike other events, this should be triggered for all players so that we can see what cards other players are playing
         var card = action.NetCombatCard.ToCardModel();
         WriteIt(action.Target != null
             ? $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} === <\\"

@@ -16,6 +16,7 @@ public partial class CombatReplayTracker
     
     public override Task AfterPotionUsed(PotionModel potion, Creature? target)
     {
+        // unlike other events, this should be triggered for all players so that we can see what potions other players are using
         WriteIt(target != null
             ? $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` **on** {FormatCreature(target)} <\\"
             : $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` <\\");

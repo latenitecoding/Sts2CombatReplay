@@ -27,47 +27,63 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     public void BufferBefore(string msg, MsgType msgType, MsgType preceded)
     {
-        if (_bufferStack.Count == 0)
+        lock (_writerLock)
         {
-            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-            return;
+            if (_bufferStack.Count == 0)
+            {
+                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+                return;
+            }
+
+            var tmp = new Stack<BufferedMsg>();
+            while (_bufferStack.Count > 0)
+            {
+                tmp.Push(_bufferStack.Last());
+                _bufferStack.RemoveLast();
+                if (tmp.Peek().MsgType != preceded) continue;
+                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+                while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
+                return;
+            }
+
+            while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
         }
         
-        var tmp = new Stack<BufferedMsg>();
-        while (_bufferStack.Count > 0)
-        {
-            tmp.Push(_bufferStack.Last());
-            _bufferStack.RemoveLast();
-            if (tmp.Peek().MsgType != preceded) continue;
-            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-            while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
-            return;
-        }
-
-        while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
         Flush();
-        _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+        
+        lock (_writerLock)
+        {
+            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+        }
     }
 
     public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None)
     {
-        if (overwrite != MsgType.None && PeekBufferType() == overwrite)
+        lock (_writerLock)
         {
-            _bufferStack.RemoveLast();
-            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-            return;
+            if (overwrite != MsgType.None && PeekBufferType() == overwrite)
+            {
+                _bufferStack.RemoveLast();
+                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+                return;
+            }
         }
 
         // don't keep unrelated events together in the same buffer
         Flush();
-        _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+
+        lock (_writerLock)
+        {
+            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+        }
     }
 
     public void Flush()
     {
-        if (_savePath == null || _writer == null || _bufferStack.Count == 0) return;
+        if (_savePath == null || _writer == null) return;
         lock (_writerLock)
         {
+            if (_bufferStack.Count == 0) return;
             while (_bufferStack.Count > 0)
             {
                 _writer.WriteLine(_bufferStack.First().Msg);

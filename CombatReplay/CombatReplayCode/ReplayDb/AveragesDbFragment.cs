@@ -21,9 +21,14 @@ public partial class CombatReplayDb
     
     private void UpdateAverages()
     {
-        AvgDamagePerTurn = Math.Round(((decimal)TotalDamage) / TotalTurnsPlayed, 2);
-        AvgBlockPerTurn = Math.Round(((decimal)TotalBlockGained) / TotalTurnsPlayed, 2);
+        if (TotalTurnsPlayed > 0)
+        {
+            AvgDamagePerTurn = Math.Round(((decimal)TotalDamage) / TotalTurnsPlayed, 2);
+            AvgBlockPerTurn = Math.Round(((decimal)TotalBlockGained) / TotalTurnsPlayed, 2);
+        }
 
+        if (CurrentCombat <= 0) return;
+        
         AvgDamagePerCombat = Math.Round(((decimal)TotalDamage) / CurrentCombat, 2);
         AvgBlockPerCombat = Math.Round(((decimal)TotalBlockGained) / CurrentCombat, 2);
         AvgDamageReceivedPerCombat = Math.Round(((decimal)TotalDamageReceived) / CurrentCombat, 2);

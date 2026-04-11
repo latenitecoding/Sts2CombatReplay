@@ -4,15 +4,11 @@ public partial class CombatReplayTracker
 {
     private string? _runSeed;
 
-    // there is an AfterActEntered, but it doesn't appear to be called by the game
     public void OnActEntered()
     {
+        // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
         WriteIt($"### Act {_db.CurrentAct} **started** ###");
-        
-        // // each act starts with an 'Ancient' room which is handled implicitly by the game
-        // _db.NextRoom();
-        // WriteIt($"##### Room: {_db.CurrentRoom} (`Ancient`) **entered** #####");
     }
 
     public void OnRoomEntered()

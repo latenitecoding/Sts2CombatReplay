@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace CombatReplay.CombatReplayCode.ReplayDb;
 
@@ -22,23 +23,23 @@ public partial class CombatReplayDb
         var imTargeted = LocalContext.IsMe(target) || (target is { IsPet: true }  && LocalContext.IsMe(target.PetOwner));
         var iApplied = LocalContext.IsMe(applier) || isMyCard;
         
-        if (power.Title.GetFormattedText().Contains("Strength") && (imTargeted || isMyCard))
+        if (power is StrengthPower && (imTargeted || isMyCard))
         {
             TotalStrengthGained += (int) amount;
         }
-        else if (power.Title.GetFormattedText().Contains("Vulnerable") && target.IsEnemy && iApplied)
+        else if (power is VulnerablePower && target.IsEnemy && iApplied)
         {
             TotalVulnerableApplied += (int) amount;
         }
-        else if (power.Title.GetFormattedText().Contains("Weak") && target.IsEnemy && iApplied)
+        else if (power is WeakPower && target.IsEnemy && iApplied)
         {
             TotalWeakApplied += (int) amount;
         }
-        else if (power.Title.GetFormattedText().Contains("Poison") && target.IsEnemy && iApplied)
+        else if (power is PoisonPower && target.IsEnemy && iApplied)
         {
             TotalPoisonApplied += (int) amount;
         }
-        else if (power.Title.GetFormattedText().Contains("Doom") && iApplied)
+        else if (power is DoomPower && target.IsEnemy && iApplied)
         {
             TotalDoomApplied += (int) amount;
         }

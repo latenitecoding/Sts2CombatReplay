@@ -105,7 +105,6 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
         _db.TotalDeckShuffles++;
-        WriteIt($"> {FormatPlayer(shuffler)} **emptied** `Deck` <\\");
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard` <\\");
         return Task.CompletedTask;
     }

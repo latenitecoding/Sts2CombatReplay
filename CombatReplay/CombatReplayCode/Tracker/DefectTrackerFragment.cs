@@ -39,6 +39,7 @@ public partial class CombatReplayTracker
         if (orb is DarkOrb)
         {
             // the dark orb is the only ambiguous orb because it accumulates damage rather than gaining it
+            // other orbs have an in-game effect that will be logged by the other event handlers
             WriteIt($"> `{orb.Title.GetFormattedText()}` **gained** [`Damage {(int) orb.PassiveVal}`] <\\");
         }
     }

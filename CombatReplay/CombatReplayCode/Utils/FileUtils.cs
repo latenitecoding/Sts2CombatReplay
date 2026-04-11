@@ -37,14 +37,12 @@ public static class FileUtils
 
     private static string AsMultiplayer(string saveFile)
     {
-        var split = saveFile.Split(".");
-        return $"{split[0]}_mp.{split[1]}";
+        return $"{Path.GetFileNameWithoutExtension(saveFile)}_mp.{Path.GetExtension(saveFile)}";
     }
 
     private static string WithStartTime(string saveFile, long startTime)
     {
-        var split = saveFile.Split(".");
-        return $"{split[0]}_{startTime}.{split[1]}";
+        return $"{Path.GetFileNameWithoutExtension(saveFile)}_{startTime}.{Path.GetExtension(saveFile)}";
     }
     
     private static string GetDefaultSavePath(bool isMultiplayer, string saveFile)

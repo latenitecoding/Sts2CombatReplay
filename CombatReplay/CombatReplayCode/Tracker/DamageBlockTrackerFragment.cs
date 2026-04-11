@@ -97,7 +97,7 @@ public partial class CombatReplayTracker
         //  - damage dealt to pet
         //  - remaining damage dealt to pet owner
         // as such, any damage to the pet would have already had the pet owner's block deducted from it
-        var permittedBlock = dealer != null && dealer.Name != target.Name ? target.Block : 0;
+        var permittedBlock = dealer != null && dealer != target ? target.Block : 0;
         if (permittedBlock + target.CurrentHp > (int) amount) return Task.CompletedTask;
 
         if (dealer != null && target is { IsPet: true } && LocalContext.IsMe(target.PetOwner))
