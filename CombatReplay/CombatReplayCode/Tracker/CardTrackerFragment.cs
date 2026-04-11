@@ -16,20 +16,8 @@ public partial class CombatReplayTracker
         ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
     };
 
-    private readonly HashSet<CardModel> _addedCards = [];
-    private readonly HashSet<CardModel> _createdCards = [];
-    private readonly HashSet<CardModel> _givenCards = [];
-
-    private void ClearTrackedCreatedCards()
-    {
-        _addedCards.Clear();
-        _createdCards.Clear();
-        _givenCards.Clear();
-    }
-
     public override Task AfterCardEnteredCombat(CardModel card)
     {
-        if (_addedCards.Contains(card)) return Task.CompletedTask;
         // if this comes after a card added, then that event already populated the message correctly
         if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardAdded)
         {
@@ -102,11 +90,10 @@ public partial class CombatReplayTracker
     
     public void OnExecuteCard(PlayCardAction action)
     {
-        ClearTrackedCreatedCards();
         var card = action.NetCombatCard.ToCardModel();
         WriteIt(action.Target != null
-            ? $"> _{FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)}_ <\\"
-            : $"> _{FormatPlayer(action.Player)} **played** `{card.Title}`_ <\\");
+            ? $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} === <\\"
+            : $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` === <\\");
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }

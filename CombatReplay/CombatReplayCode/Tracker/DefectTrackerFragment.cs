@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Orbs;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
 
@@ -12,9 +13,8 @@ public partial class CombatReplayTracker
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
-        BufferBefore(
-            $"> {FormatPlayer(player)} **channeled** `{orb.Title.GetFormattedText()}` <\\",
-            ReplayLogger.MsgType.OrbChanneled, 
+        WriteBefore(
+            $"> {FormatPlayer(player)} **channeled** {FormatOrb(orb)} <\\",
             ReplayLogger.MsgType.OrbEvoked);
         _db.TotalOrbsChanneled += 1;
         return Task.CompletedTask;
@@ -24,10 +24,36 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(orb.Owner)) return Task.CompletedTask;
         BufferBefore(
-            $"> {FormatPlayer(orb.Owner)} **evoked** `{orb.Title.GetFormattedText()}` <\\",
+            $"> {FormatPlayer(orb.Owner)} **evoked** {FormatOrb(orb, useEvokeVal: true)} <\\",
             ReplayLogger.MsgType.OrbEvoked,
             ReplayLogger.MsgType.RpoHit);
         _db.TotalOrbsEvoked += 1;
         return Task.CompletedTask;
+    }
+
+    public void OnOrbPassive(OrbModel orb)
+    {
+        WriteIt($"> {FormatPlayer(orb.Owner)} **triggered** {FormatOrb(orb)} <\\");
+        if (orb is DarkOrb)
+        {
+            WriteIt($"> `{orb.Title.GetFormattedText()}` **gained** [`Damage {(int) orb.PassiveVal}`] <\\");
+        }
+    }
+
+    private string FormatOrb(OrbModel orb, bool useEvokeVal = false)
+    {
+        if (orb is LightningOrb or GlassOrb or DarkOrb)
+        {
+            return $"`{orb.Title.GetFormattedText()} Orb` [`Damage {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
+        }
+        else if (orb is FrostOrb)
+        {
+            return $"`{orb.Title.GetFormattedText()} Orb` [`Block {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
+        }
+        else if (orb is PlasmaOrb)
+        {
+            return $"`{orb.Title.GetFormattedText()} Orb` [`Energy {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
+        }
+        return $"`{orb.Title.GetFormattedText()} Orb`";
     }
 }

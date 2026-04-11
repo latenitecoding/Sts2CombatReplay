@@ -19,7 +19,6 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         CardEntered,
         CardGiven,
         Draw,
-        OrbChanneled,
         OrbEvoked,
         PetWasHit,
         RpoHit, // Relic-Power-Orb Hit

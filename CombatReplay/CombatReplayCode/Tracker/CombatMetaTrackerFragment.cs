@@ -26,7 +26,6 @@ public partial class CombatReplayTracker
         MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
         _db.InProgressSave();
 
-        ClearTrackedCreatedCards();
         _logger?.OnCombatEnd();
         
         return Task.CompletedTask;
@@ -78,6 +77,14 @@ public partial class CombatReplayTracker
             }
             var powers = string.Join(", ", creature.Powers.Select(power => $"`{power.Title.GetFormattedText()} {power.Amount}`"));
             WriteIt($"> {FormatCreature(creature)} **active** **with** [{powers}] powers <\\");
+            if (creature is { IsPlayer: true } and not { Player : null } and not { Player.PlayerCombatState: null } &&
+                creature.Player.PlayerCombatState.OrbQueue.Orbs.Count > 0)
+            {
+                foreach (var orb in creature.Player.PlayerCombatState.OrbQueue.Orbs)
+                {
+                    WriteIt($"> {FormatCreature(creature)} **has** {FormatOrb(orb)} <\\");
+                }
+            }
         }
 
         var pcs = player.PlayerCombatState;
@@ -119,7 +126,6 @@ public partial class CombatReplayTracker
         {
             case CombatSide.Player:
                 WriteIt("=== Player phase **ended** ===\\");
-                ClearTrackedCreatedCards();
                 break;
             case CombatSide.Enemy:
                 WriteIt($"=== Turn: {_db.CurrentTurn} **ended** ===\\");
