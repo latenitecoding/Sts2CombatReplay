@@ -3,7 +3,7 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 public class CardStats
 {
     public int TimesPlayed { get; set; }
-    public int TimesDrawn { get; set; }
+    public int TimesAddedToHand { get; set; }
     public int TimesDiscarded { get; set; }
     
     public Decimal PlayToDrawRatio { get; set; }

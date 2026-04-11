@@ -1,4 +1,6 @@
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -14,6 +16,15 @@ public partial class CombatReplayTracker
         ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
     };
 
+    public override Task AfterCardEnteredCombat(CardModel card)
+    {
+        WriteIt(card.Pile != null
+            ? $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **in** `{card.Pile.Type.ToString()}` <\\"
+            : $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} <\\");
+        _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
+        return Task.CompletedTask;
+    }
+
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
@@ -22,16 +33,12 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer = true)
+    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer, bool addedToHand)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
-        if (!addedByPlayer)
-        {
-            WriteIt($"> {FormatPlayer(owner)} **was** **given** {FormatCard(card)} <\\");
-            return;
-        }
-        WriteIt($"> {FormatPlayer(owner)} **created** {FormatCard(card)} <\\");
-        _db.TotalCardsCreated += 1;
+        WriteIt(addedByPlayer
+            ? $"> {FormatPlayer(owner)} **created** `{card.Title}` <\\"
+            : $"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
     }
     
     public void OnExecuteCard(PlayCardAction action)
@@ -44,12 +51,10 @@ public partial class CombatReplayTracker
         _db.OnExecuteCard(card.Title);
     }
 
-    public void OnTransformCard(Player owner, CardModel original, CardModel replacement)
+    public void OnTransformCard(Player owner, CardModel original)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
-        WriteIt($"> {FormatPlayer(owner)} **gained** {FormatCard(replacement)} <\\");
-        _db.TotalCardsCreated += 1;
     }
     
     private string FormatCard(CardModel card)

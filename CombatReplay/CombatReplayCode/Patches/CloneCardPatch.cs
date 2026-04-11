@@ -1,6 +1,8 @@
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Patches;
@@ -19,6 +21,10 @@ public class CloneCardPatch
 
     static void Prefix(CardModel mutableCard)
     {
-        MainFile.Tracker.OnAddGeneratedCard(mutableCard.Owner, mutableCard);
+        MainFile.Tracker.OnAddGeneratedCard(
+            mutableCard.Owner,
+            mutableCard,
+            LocalContext.IsMe(mutableCard.Owner),
+            mutableCard.Pile is { Type: PileType.Hand });
     }
 }

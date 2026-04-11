@@ -54,6 +54,19 @@ public partial class CombatReplayDb
         }
     }
 
+    public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
+    {
+        var cardStats = GetOrCreateCardStats(cardTitle);
+        if (addedToHand)
+        {
+            cardStats.TimesAddedToHand++;
+        }
+        if (addedByPlayer)
+        {
+            TotalCardsCreated += 1;
+        }
+    }
+
     public void OnCardDiscarded(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
@@ -64,8 +77,8 @@ public partial class CombatReplayDb
     public void OnCardDrawn(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
-        cardStats.TimesDrawn++;
-        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesDrawn, 2);
+        cardStats.TimesAddedToHand++;
+        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         TotalCardsDrawn++;
 
         if (MostLikedCard.Count == 0 || cardStats.PlayToDrawRatio > MostLikedCard.Values.First().PlayToDrawRatio)
@@ -85,7 +98,7 @@ public partial class CombatReplayDb
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesPlayed++;
-        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesDrawn, 2);
+        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         TotalCardsPlayed++;
 
         if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
