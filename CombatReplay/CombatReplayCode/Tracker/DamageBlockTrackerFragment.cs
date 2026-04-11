@@ -26,15 +26,7 @@ public partial class CombatReplayTracker
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         
-        _db.AddCombatBlockGained((int) amount);
-        if (cardSource != null)
-        {
-            _db.AddBlockGainedByCard(cardSource.Title, (int) amount);
-        }
-        else
-        {
-            _db.TotalRelicPowerBlock += (int) amount;
-        }
+        _db.AddCombatBlockGained(cardSource, (int) amount);
         return Task.CompletedTask;
     }
 

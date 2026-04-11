@@ -28,7 +28,7 @@ public partial class CombatReplayTracker
         {
             // replace the card created output with this now that the pileType has been populated
             BufferIt(
-                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} (@ `{card.Pile?.Type.ToString() ?? "N/A"}`) <\\",
+                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
                 ReplayLogger.MsgType.CardEntered,
                 ReplayLogger.MsgType.CardCreated);
             _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
@@ -57,7 +57,7 @@ public partial class CombatReplayTracker
         else _db.TotalCardsDrawn++;
         // replace cards added to hand with card drawn to hand
         BufferIt(
-            $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} **into** `Hand` <\\",
+            $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} <\\",
             ReplayLogger.MsgType.Draw,
             overwrite: ReplayLogger.MsgType.CardAdded);
         return Task.CompletedTask;

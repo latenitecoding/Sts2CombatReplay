@@ -2,12 +2,6 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public partial class CombatReplayDb
 {
-    public int TotalPetDamage { get; set; }
-    public int TotalPetDamageReceived { get; set; }
-    
-    public int TotalRelicPowerDamage { get; set; }
-    public int TotalRelicPowerBlock { get; set; }
-    
     public int TotalEnergyGained { get; set; }
     public int TotalStarsGained { get; set; }
     public int TotalEnergySpent { get; set; }

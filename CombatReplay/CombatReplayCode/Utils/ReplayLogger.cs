@@ -42,10 +42,13 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             bufferStack.RemoveLast();
             if (tmp.Peek().msgType != preceded) continue;
             bufferStack.AddLast(new BufferedMsg(msg, msgType));
-            break;
+            while (tmp.Count > 0) bufferStack.AddLast(tmp.Pop());
+            return;
         }
 
         while (tmp.Count > 0) bufferStack.AddLast(tmp.Pop());
+        Flush();
+        bufferStack.AddLast(new BufferedMsg(msg, msgType));
     }
 
     public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None)

@@ -9,6 +9,7 @@ namespace CombatReplay.CombatReplayCode.Patches;
 [HarmonyPatch]
 public class AddCardToPilePatch
 {
+    // the add method has many overrides in CardPileCmd
     static MethodBase TargetMethod()
     {
         return AccessTools.Method(typeof(CardPileCmd), "Add",
@@ -24,6 +25,7 @@ public class AddCardToPilePatch
     
     static void Prefix(IEnumerable<CardModel> cards, CardPile newPile)
     {
+        // best catch-all method for cards that are added to the player's card piles
         foreach (var card in cards)
         {
             MainFile.Tracker.OnCardAdded(card.Owner, card, newPile.Type);

@@ -6,6 +6,12 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public partial class CombatReplayDb
 {
+    public int TotalPetDamage { get; set; }
+    public int TotalPetDamageReceived { get; set; }
+    
+    public int TotalRelicPowerOrbDamage { get; set; }
+    public int TotalRelicPowerOrbBlock { get; set; }
+    
     public int TotalDamage { get; set; }
     public int TotalTrueDamage { get; set; }
     public int TotalBlockedDamage { get; set; }
@@ -55,11 +61,20 @@ public partial class CombatReplayDb
         _currentCombat.TotalBlockedDamageReceived += blockedDamage.Value;
     }
 
-    public void AddCombatBlockGained(int amount)
+    public void AddCombatBlockGained(CardModel? cardSource, int amount)
     {
         TotalBlockGained += amount;
         _currentCombat.TotalBlockGained += amount;
         _currentTurnBlock += amount;
+        
+        if (cardSource != null)
+        {
+            AddBlockGainedByCard(cardSource.Title, amount);
+        }
+        else
+        {
+            TotalRelicPowerOrbBlock += amount;
+        }
     }
 
     public void OnCombatDamageDealt(Creature? dealer, Creature target, CardModel? cardSource, int totalDamage, int? trueDamage,
@@ -72,7 +87,7 @@ public partial class CombatReplayDb
         }
         else if (LocalContext.IsMe(target) || (target is { IsPet: true } && LocalContext.IsMe(target.PetOwner)))
         {
-            if (target is { IsPet: true }) TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
+            if (target is { IsPet: true }) TotalPetDamageReceived += totalDamage - target.Block;
             else
             {
                 AddCombatDamageReceived(totalDamage, trueDamage, blockedDamage);
@@ -88,7 +103,7 @@ public partial class CombatReplayDb
         }
         else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
         {
-            TotalRelicPowerDamage += totalDamage;
+            TotalRelicPowerOrbDamage += totalDamage;
         }
     }
 }

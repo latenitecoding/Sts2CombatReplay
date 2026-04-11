@@ -33,7 +33,7 @@ public partial class CombatReplayTracker
 
     public void OnOrbPassive(OrbModel orb)
     {
-        WriteIt($"> {FormatPlayer(orb.Owner)} **triggered** {FormatOrb(orb)} <\\");
+        WriteIt($"> {FormatOrb(orb)} **triggered** <\\");
         if (orb is DarkOrb)
         {
             WriteIt($"> `{orb.Title.GetFormattedText()}` **gained** [`Damage {(int) orb.PassiveVal}`] <\\");
