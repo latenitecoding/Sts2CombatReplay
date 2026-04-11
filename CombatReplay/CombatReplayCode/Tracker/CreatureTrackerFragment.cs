@@ -8,12 +8,6 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    public override Task AfterBlockBroken(Creature creature)
-    {
-        WriteIt($"> {FormatCreature(creature)} **broken** <\\");
-        return Task.CompletedTask;
-    }
-    
     public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
         float deathAnimLength)
     {

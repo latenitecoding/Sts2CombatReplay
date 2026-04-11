@@ -65,20 +65,14 @@ public partial class CombatReplayDb
     public void OnCombatDamageDealt(Creature? dealer, Creature target, CardModel? cardSource, int totalDamage, int? trueDamage,
         int? blockedDamage)
     {
-        if (target.IsEnemy && LocalContext.IsMe(dealer) || (dealer is { IsPet: true } && LocalContext.IsMe(dealer.PetOwner)))
+        if (target.IsEnemy && (LocalContext.IsMe(dealer) || (dealer is { IsPet: true } && LocalContext.IsMe(dealer.PetOwner))))
         {
             AddCombatDamageDealt(dealer, target, totalDamage, trueDamage, blockedDamage);
-            if (dealer is { IsPet: true })
-            {
-                TotalPetDamage += totalDamage;
-            }
+            if (dealer is { IsPet: true }) TotalPetDamage += totalDamage;
         }
         else if (LocalContext.IsMe(target) || (target is { IsPet: true } && LocalContext.IsMe(target.PetOwner)))
         {
-            if (target is { IsPet: true })
-            {
-               TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
-            }
+            if (target is { IsPet: true }) TotalPetDamageReceived += Math.Min(totalDamage, target.Block + target.CurrentHp);
             else
             {
                 AddCombatDamageReceived(totalDamage, trueDamage, blockedDamage);

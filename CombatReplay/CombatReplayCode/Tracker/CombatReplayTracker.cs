@@ -64,6 +64,21 @@ public partial class CombatReplayTracker : AbstractModel
         _db.OnRunEnd(startTime);
     }
 
+    private void BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded)
+    {
+        _logger?.BufferBefore(msg, msgType, preceded);
+    }
+
+    private void BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None)
+    {
+        _logger?.BufferIt(msg, msgType, overwrite);
+    }
+
+    private void WriteBefore(string msg, ReplayLogger.MsgType preceded)
+    {
+        _logger?.WriteBefore(msg, preceded);
+    }
+
     private void WriteIt(string msg)
     {
         _logger?.WriteIt(msg);

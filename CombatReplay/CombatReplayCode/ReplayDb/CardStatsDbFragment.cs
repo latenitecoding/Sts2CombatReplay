@@ -54,20 +54,17 @@ public partial class CombatReplayDb
         }
     }
 
-    public void OnCardAdded(string cardTitle, bool addedToHand)
+    public void OnCardAddedToHand(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
-        if (!addedToHand) return;
         cardStats.TimesAddedToHand++;
+        UpdatePlayFromHandRatio(cardTitle, cardStats);
     }
 
     public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
     {
-        OnCardAdded(cardTitle, addedToHand);
-        if (addedByPlayer)
-        {
-            TotalCardsCreated += 1;
-        }
+        if (addedToHand) OnCardAddedToHand(cardTitle);
+        if (addedByPlayer) TotalCardsCreated += 1;
     }
 
     public void OnCardDiscarded(string cardTitle)
@@ -79,49 +76,24 @@ public partial class CombatReplayDb
 
     public void OnCardDrawn(string cardTitle)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
-        cardStats.TimesAddedToHand++;
-        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         TotalCardsDrawn++;
-
-        if (MostLikedCard.Count == 0 || cardStats.PlayToDrawRatio > MostLikedCard.Values.First().PlayToDrawRatio)
-        {
-            MostLikedCard.Clear();
-            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
-        }
-
-        if (MostIgnoredCard.Count == 0 || cardStats.PlayToDrawRatio < MostIgnoredCard.Values.First().PlayToDrawRatio)
-        {
-            MostIgnoredCard.Clear();
-            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
-        }
+        OnCardAddedToHand(cardTitle);
     }
 
     public void OnExecuteCard(string cardTitle)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
         cardStats.TimesPlayed++;
-        cardStats.PlayToDrawRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         TotalCardsPlayed++;
-
+        
         if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
         {
             MostPlayedCard.Clear();
             MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
         }
 
-        if (MostLikedCard.Count == 0 || cardStats.PlayToDrawRatio > MostLikedCard.Values.First().PlayToDrawRatio)
-        {
-            MostLikedCard.Clear();
-            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
-        }
-
-        if (MostIgnoredCard.Count == 0 || cardStats.PlayToDrawRatio < MostIgnoredCard.Values.First().PlayToDrawRatio)
-        {
-            MostIgnoredCard.Clear();
-            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
-        }
-        
+        UpdatePlayFromHandRatio(cardTitle, cardStats);
+       
         UpdateCardStats();
         _prevCardPlay = cardTitle;
     }
@@ -142,6 +114,23 @@ public partial class CombatReplayDb
 
         _currentAttackDamage = 0;
         _currentDefenseBlock = 0;
+    }
+
+    private void UpdatePlayFromHandRatio(string cardTitle, CardStats cardStats)
+    {
+        cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
+
+        if (MostLikedCard.Count == 0 || cardStats.PlayFromHandRatio > MostLikedCard.Values.First().PlayFromHandRatio)
+        {
+            MostLikedCard.Clear();
+            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
+        }
+
+        if (MostIgnoredCard.Count == 0 || cardStats.PlayFromHandRatio < MostIgnoredCard.Values.First().PlayFromHandRatio)
+        {
+            MostIgnoredCard.Clear();
+            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
+        }   
     }
 
     private static readonly Regex TitleToKeyRegex = new(@"\+\d*$", RegexOptions.Compiled);

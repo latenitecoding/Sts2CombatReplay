@@ -27,6 +27,7 @@ public partial class CombatReplayTracker
         _db.InProgressSave();
 
         ClearTrackedCreatedCards();
+        _logger?.OnCombatEnd();
         
         return Task.CompletedTask;
     }
