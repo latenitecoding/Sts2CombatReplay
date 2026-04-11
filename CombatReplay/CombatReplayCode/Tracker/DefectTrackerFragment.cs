@@ -13,21 +13,23 @@ public partial class CombatReplayTracker
     public override Task AfterOrbChanneled(PlayerChoiceContext choiceContext, Player player, OrbModel orb)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
+        // channeled events are triggered after evoke events even though the channel occurs first in game
         WriteBefore(
             $"> {FormatPlayer(player)} **channeled** {FormatOrb(orb)} <\\",
             ReplayLogger.MsgType.OrbEvoked);
-        _db.TotalOrbsChanneled += 1;
+        _db.TotalOrbsChanneled++;
         return Task.CompletedTask;
     }
 
     public override Task AfterOrbEvoked(PlayerChoiceContext choiceContext, OrbModel orb, IEnumerable<Creature> targets)
     {
         if (!LocalContext.IsMe(orb.Owner)) return Task.CompletedTask;
+        // the damage from an evoke is resolved before the evoke trigger even though the evoke occurs first in game
         BufferBefore(
             $"> {FormatPlayer(orb.Owner)} **evoked** {FormatOrb(orb, useEvokeVal: true)} <\\",
             ReplayLogger.MsgType.OrbEvoked,
             ReplayLogger.MsgType.RpoHit);
-        _db.TotalOrbsEvoked += 1;
+        _db.TotalOrbsEvoked++;
         return Task.CompletedTask;
     }
 
@@ -36,6 +38,7 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatOrb(orb)} **triggered** <\\");
         if (orb is DarkOrb)
         {
+            // the dark orb is the only ambiguous orb because it accumulates damage rather than gaining it
             WriteIt($"> `{orb.Title.GetFormattedText()}` **gained** [`Damage {(int) orb.PassiveVal}`] <\\");
         }
     }

@@ -43,9 +43,6 @@ public partial class CombatReplayDb
             TotalDoomApplied += (int) amount;
         }
 
-        if (imTargeted && isMyCard)
-        {
-            TotalPowersAppliedToSelf += 1;
-        }
+        if (imTargeted && isMyCard) TotalPowersAppliedToSelf++;
     }
 }

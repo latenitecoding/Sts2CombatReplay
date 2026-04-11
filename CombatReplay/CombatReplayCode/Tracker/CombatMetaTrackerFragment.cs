@@ -13,7 +13,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> I **discarded** `{card}` <\\");
+        WriteIt($"> I **discarded** `{card.Title}` <\\");
         _db.OnCardDiscarded(card.Title);
         return Task.CompletedTask;
     }
@@ -57,7 +57,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         _db.TotalEmptyHands++;
-        WriteIt($"> {FormatPlayer(player)} **emptied** `hand` <\\");
+        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` <\\");
         return Task.CompletedTask;
     }
    
@@ -75,8 +75,10 @@ public partial class CombatReplayTracker
                 WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
                 continue;
             }
+            
             var powers = string.Join(", ", creature.Powers.Select(power => $"`{power.Title.GetFormattedText()} {power.Amount}`"));
-            WriteIt($"> {FormatCreature(creature)} **active** **with** [{powers}] powers <\\");
+            WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers <\\");
+            
             if (creature is { IsPlayer: true } and not { Player : null } and not { Player.PlayerCombatState: null } &&
                 creature.Player.PlayerCombatState.OrbQueue.Orbs.Count > 0)
             {
@@ -98,25 +100,13 @@ public partial class CombatReplayTracker
         
         return Task.CompletedTask;       
     }
-    
-    public override Task AfterPotionUsed(PotionModel potion, Creature? target)
-    {
-        var prefix = (LocalContext.IsMe(potion.Owner)) ? "I" : "Another";
-        WriteIt(target != null
-            ? $"> _{prefix} **used** `{potion.Title.GetFormattedText()}` **on** {FormatCreature(target)}_ <\\"
-            : $"> _{prefix} **used** `{potion.Title.GetFormattedText()}`_ <\\");
-        if (LocalContext.IsMe(potion.Owner))
-        {
-            _db.TotalPotionsUsed++;
-        }
-        return Task.CompletedTask;
-    }
 
     public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
     {
         if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
         _db.TotalDeckShuffles++;
-        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** <\\");
+        WriteIt($"> {FormatPlayer(shuffler)} **emptied** `Deck` <\\");
+        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard` <\\");
         return Task.CompletedTask;
     }
     

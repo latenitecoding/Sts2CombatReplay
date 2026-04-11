@@ -12,6 +12,7 @@ public partial class CombatReplayTracker
 {
     public override Task AfterBlockBroken(Creature creature)
     {
+        // the necrobinder block broken event is triggered after osty takes damage even though it occurs first in game
         BufferBefore(
             $"> {FormatCreature(creature)} **broken** <\\", ReplayLogger.MsgType.BlockBroken, 
             ReplayLogger.MsgType.PetWasHit);
@@ -37,6 +38,9 @@ public partial class CombatReplayTracker
         if (dealer != null && target is { IsPet: true } and not { PetOwner: null } &&
             LocalContext.IsMe(target.PetOwner))
         {
+            // have to buffer hits against the pet because they are logged out of order
+            // current order is osty damage -> necro block broken -> necro damage (remaining)
+            // order should be necro damage -> necro block broken -> osty damage -> necro damage (remaining)
             BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.PetWasHit);
@@ -50,6 +54,8 @@ public partial class CombatReplayTracker
         }
         else if (dealer is { IsPlayer: true })
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
+            // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
             BufferBefore(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.RpoHit,
@@ -57,6 +63,7 @@ public partial class CombatReplayTracker
         }
         else if (dealer != null)
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.BlockBroken);
@@ -67,6 +74,7 @@ public partial class CombatReplayTracker
         }
         else
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
                 $"> {FormatCreature(target)} **took** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\", 
                 ReplayLogger.MsgType.BlockBroken);
@@ -81,11 +89,22 @@ public partial class CombatReplayTracker
     public override Task BeforeDamageReceived(PlayerChoiceContext ctx, Creature target, Decimal amount,
         ValueProp props, Creature? dealer, CardModel? cardSource)
     {
+        // if the damage is non-lethal, then this event will be called and then AfterDamageReceived will be called
+        // this ensures that this method terminates immediately if the damage is non-lethal
+        // since players can block for their pets, it makes sense to add the pet owner's block to the pet's block
+        // however, the game calculates that in advance and separates the damage into three separate events
+        //  - damage dealt to pet owner's block
+        //  - damage dealt to pet
+        //  - remaining damage dealt to pet owner
+        // as such, any damage to the pet would have already had the pet owner's block deducted from it
         var permittedBlock = dealer != null && dealer.Name != target.Name ? target.Block : 0;
         if (permittedBlock + target.CurrentHp > (int) amount) return Task.CompletedTask;
 
         if (dealer != null && target is { IsPet: true } && LocalContext.IsMe(target.PetOwner))
         {
+            // have to buffer hits against the pet because they are logged out of order
+            // current order is osty damage -> necro block broken -> necro damage (remaining)
+            // order should be necro damage -> necro block broken -> osty damage -> necro damage (remaining)
             BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
                     ReplayLogger.MsgType.PetWasHit);
@@ -99,6 +118,8 @@ public partial class CombatReplayTracker
         }
         else if (dealer is { IsPlayer : true })
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
+            // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
             BufferBefore(
                 $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.RpoHit,
@@ -106,6 +127,7 @@ public partial class CombatReplayTracker
         }
         else if (dealer != null)
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
                 $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.BlockBroken);
@@ -116,13 +138,14 @@ public partial class CombatReplayTracker
         }
         else
         {
+            // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
                 $"> {FormatCreature(target)} **took** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\",
                 ReplayLogger.MsgType.BlockBroken);
         }
 
         // this is called when damage is lethal; amount should always be the full amount while the others should reflect damage dealt to the creature
-        // the total damage tracks amount that could have been achieved if monster had the hp
+        // the total damage tracks amount that could have been achieved because the player wants to see their damage ceiling
         _db.OnCombatDamageDealt(dealer, target, cardSource, (int) amount, target.CurrentHp, target.Block);
         return Task.CompletedTask;
     }

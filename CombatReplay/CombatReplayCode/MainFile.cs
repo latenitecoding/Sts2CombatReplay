@@ -24,6 +24,8 @@ public partial class MainFile : Node
     public static readonly CombatReplayTracker Tracker = new();
     
     private static void OnRunStarted(RunState state) => Tracker.OnRunStart();
+    private static void OnActEntered() => Tracker.OnActEntered();
+    private static void OnRoomEntered() => Tracker.OnRoomEntered();
     private static void OnRoomExited() => Tracker.OnRoomExited();
 
     public static void Initialize()
@@ -35,7 +37,13 @@ public partial class MainFile : Node
 
         Logger.Info("Harmony patched successfully.");
         
+        // the best (if not only) start of run hook to grab
         RunManager.Instance.RunStarted += OnRunStarted;
+        // the best (if not only) act start hook
+        RunManager.Instance.ActEntered += OnActEntered;
+        // the best (if not only) room entered hook
+        RunManager.Instance.RoomEntered += OnRoomEntered;
+        // the best (if not only) room exited hook
         RunManager.Instance.RoomExited += OnRoomExited;
 
         Logger.Info("RunManager event handlers set");

@@ -4,20 +4,6 @@ namespace CombatReplay.CombatReplayCode.Utils;
 
 public static class FileUtils
 {
-    public static string GetSavePath(int profileId, bool isMultiplayer, string saveFile) 
-    {
-        var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
-        return Directory.GetDirectories(rootPath)
-            .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
-            .Where(Directory.Exists)
-            .Select(profilePath => Path.Combine(
-                profilePath,
-                "saves",
-                isMultiplayer ? AsMultiplayer(saveFile) : saveFile
-            ))
-            .FirstOrDefault(GetDefaultSavePath(isMultiplayer, saveFile));
-    }
-    
     public static string? GetHistoryPath(int profileId, long startTime, string saveFile)
     {
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
@@ -35,6 +21,20 @@ public static class FileUtils
         return Path.Combine(destDir, WithStartTime(saveFile, startTime));
     }
 
+    public static string GetSavePath(int profileId, bool isMultiplayer, string saveFile) 
+    {
+        var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
+        return Directory.GetDirectories(rootPath)
+            .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
+            .Where(Directory.Exists)
+            .Select(profilePath => Path.Combine(
+                profilePath,
+                "saves",
+                isMultiplayer ? AsMultiplayer(saveFile) : saveFile
+            ))
+            .FirstOrDefault(GetDefaultSavePath(isMultiplayer, saveFile));
+    }
+
     private static string AsMultiplayer(string saveFile)
     {
         var split = saveFile.Split(".");
@@ -49,6 +49,8 @@ public static class FileUtils
     
     private static string GetDefaultSavePath(bool isMultiplayer, string saveFile)
     {
-        return Path.Combine(ProjectSettings.GlobalizePath("user://"), isMultiplayer ? AsMultiplayer(saveFile) : saveFile);
+        return Path.Combine(
+            ProjectSettings.GlobalizePath("user://"),
+            isMultiplayer ? AsMultiplayer(saveFile) : saveFile);
     }
 }

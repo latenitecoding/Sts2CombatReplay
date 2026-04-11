@@ -64,7 +64,7 @@ public partial class CombatReplayDb
     public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
     {
         if (addedToHand) OnCardAddedToHand(cardTitle);
-        if (addedByPlayer) TotalCardsCreated += 1;
+        if (addedByPlayer) TotalCardsCreated++;
     }
 
     public void OnCardDiscarded(string cardTitle)

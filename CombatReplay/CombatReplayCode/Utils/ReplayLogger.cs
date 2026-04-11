@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.GameActions;
-
 namespace CombatReplay.CombatReplayCode.Utils;
 
 public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bool loadSave)
@@ -9,7 +7,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     private readonly Lock _writerLock = new();
     private StreamWriter? _writer;
 
-    private LinkedList<BufferedMsg> bufferStack = new();
+    private readonly LinkedList<BufferedMsg> _bufferStack = [];
 
     public enum MsgType
     {
@@ -19,69 +17,87 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         CardEntered,
         CardGiven,
         Draw,
+        None,
         OrbEvoked,
         PetWasHit,
-        RpoHit, // Relic-Power-Orb Hit
-        None
+        RpoHit // Relic-Power-Orb Hit
     }
     
-    private record BufferedMsg(String msg, MsgType msgType);
+    private record BufferedMsg(string Msg, MsgType MsgType);
 
     public void BufferBefore(string msg, MsgType msgType, MsgType preceded)
     {
-        if (bufferStack.Count == 0)
+        if (_bufferStack.Count == 0)
         {
-            bufferStack.AddLast(new BufferedMsg(msg, msgType));
+            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
             return;
         }
         
         var tmp = new Stack<BufferedMsg>();
-        while (bufferStack.Count > 0)
+        while (_bufferStack.Count > 0)
         {
-            tmp.Push(bufferStack.Last());
-            bufferStack.RemoveLast();
-            if (tmp.Peek().msgType != preceded) continue;
-            bufferStack.AddLast(new BufferedMsg(msg, msgType));
-            while (tmp.Count > 0) bufferStack.AddLast(tmp.Pop());
+            tmp.Push(_bufferStack.Last());
+            _bufferStack.RemoveLast();
+            if (tmp.Peek().MsgType != preceded) continue;
+            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+            while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
             return;
         }
 
-        while (tmp.Count > 0) bufferStack.AddLast(tmp.Pop());
+        while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
         Flush();
-        bufferStack.AddLast(new BufferedMsg(msg, msgType));
+        _bufferStack.AddLast(new BufferedMsg(msg, msgType));
     }
 
     public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None)
     {
-        if (overwrite != MsgType.None && GetBufferType() == overwrite)
+        if (overwrite != MsgType.None && PeekBufferType() == overwrite)
         {
-            bufferStack.RemoveLast();
-            bufferStack.AddLast(new BufferedMsg(msg, msgType));
+            _bufferStack.RemoveLast();
+            _bufferStack.AddLast(new BufferedMsg(msg, msgType));
             return;
         }
 
+        // don't keep unrelated events together in the same buffer
         Flush();
-        bufferStack.AddLast(new BufferedMsg(msg, msgType));
+        _bufferStack.AddLast(new BufferedMsg(msg, msgType));
     }
 
     public void Flush()
     {
-        if (_savePath == null || _writer == null || bufferStack.Count == 0) return;
+        if (_savePath == null || _writer == null || _bufferStack.Count == 0) return;
         lock (_writerLock)
         {
-            while (bufferStack.Count > 0)
+            while (_bufferStack.Count > 0)
             {
-                _writer.WriteLine(bufferStack.First().msg);
-                bufferStack.RemoveFirst();
+                _writer.WriteLine(_bufferStack.First().Msg);
+                _bufferStack.RemoveFirst();
             }
             _writer.Flush();
         }
     }
 
-    public MsgType GetBufferType() => bufferStack.Count > 0 ? bufferStack.Last().msgType : MsgType.None;
-
     public void OnCombatEnd() => Flush();
 
+    public void OnRunEnd(long startTime)
+    {
+        if (_savePath == null) return;
+        
+        Flush();
+        lock (_writerLock)
+        {
+            _writer?.Flush();
+            _writer?.Close();
+            _writer = null;
+        }
+        
+        var finalPath = FileUtils.GetHistoryPath(profileId, startTime, saveFile);
+        if (finalPath == null || !File.Exists(_savePath)) return;
+        
+        File.Move(_savePath, finalPath, overwrite: true);
+        MainFile.Logger.Info($"Combat history saved to: {finalPath}");
+    }
+    
     public void OnRunStart()
     {
         _savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile);
@@ -99,32 +115,17 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         }
     }
 
-    public void OnRunEnd(long startTime)
-    {
-        Flush();
-        lock (_writerLock)
-        {
-            _writer?.Flush();
-            _writer?.Close();
-            _writer = null;
-        }
-        
-        var finalPath = FileUtils.GetHistoryPath(profileId, startTime, saveFile);
-        if (_savePath == null || finalPath == null || !File.Exists(_savePath)) return;
-        
-        File.Move(_savePath, finalPath, overwrite: true);
-        MainFile.Logger.Info($"Combat history saved to: {finalPath}");
-    }
+    public MsgType PeekBufferType() => _bufferStack.Count > 0 ? _bufferStack.Last().MsgType : MsgType.None;
 
     public void WriteBefore(string msg, MsgType msgType)
     {
         if (_savePath == null || _writer == null) return;
         lock (_writerLock)
         {
-            while (bufferStack.Count > 0 && bufferStack.First().msgType != msgType)
+            while (_bufferStack.Count > 0 && _bufferStack.First().MsgType != msgType)
             {
-                _writer.WriteLine(bufferStack.First().msg);
-                bufferStack.RemoveFirst();
+                _writer.WriteLine(_bufferStack.First().Msg);
+                _bufferStack.RemoveFirst();
             }
             _writer.WriteLine(msg);
             _writer.Flush();

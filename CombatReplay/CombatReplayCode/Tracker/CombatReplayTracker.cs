@@ -1,6 +1,7 @@
 using CombatReplay.CombatReplayCode.ReplayDb;
 using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Runs;
@@ -21,11 +22,10 @@ public partial class CombatReplayTracker : AbstractModel
         MainFile.Logger.Info($"CombatReplay tracking started");
 
         var saveManager = SaveManager.Instance;
-        var profileId = saveManager.CurrentProfileId;
-        var hasSave = saveManager.HasRunSave;
         
-        MainFile.Logger.Info($"SaveManager Profile ID {profileId}");
-        MainFile.Logger.Info($"SaveManager has save: {hasSave}");
+        MainFile.Logger.Info($"SaveManager Profile ID {saveManager.CurrentProfileId}");
+        MainFile.Logger.Info($"SaveManager has Singleplayer Save: {saveManager.HasRunSave}");
+        MainFile.Logger.Info($"SaveManager has Multiplayer Save: {saveManager.HasMultiplayerRunSave}");
 
         var isMultiplayer = RunManager.Instance.NetService.Type.IsMultiplayer();
 
@@ -35,23 +35,37 @@ public partial class CombatReplayTracker : AbstractModel
 
         MainFile.Logger.Info("Starting ReplayLogger...");
         
-        _logger = new ReplayLogger(profileId, isMultiplayer, "sts2_combat_tracker_current.replay", hasSave);
+        _logger = new ReplayLogger(
+            saveManager.CurrentProfileId,
+            isMultiplayer,
+            "sts2_combat_tracker_current.replay",
+            isMultiplayer ? saveManager.HasMultiplayerRunSave : saveManager.HasRunSave);
         _logger.OnRunStart();
 
         MainFile.Logger.Info("Initializing CombatReplayDb...");
 
         if (_db.CurrentAct != 0) _db = new CombatReplayDb();
-        _db = hasSave
-            ? CombatReplayDb.LoadFromFileOrElse(profileId, isMultiplayer, "sts2_combat_stats_current.json", _db)
-            : _db.Init(profileId, isMultiplayer, "sts2_combat_stats_current.json");
+        _db = (isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)
+            ? CombatReplayDb.LoadFromFileOrElse(
+                saveManager.CurrentProfileId,
+                isMultiplayer,
+                "sts2_combat_stats_current.json",
+                _db)
+            : _db.Init(saveManager.CurrentProfileId, isMultiplayer, "sts2_combat_stats_current.json");
         _db.RunSeed = _runSeed;
 
-        if (hasSave) return;
+        if ((isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)) return;
         
-        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{profileId} #");
+        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId} #");
+
+        var ascensionLevel = AscensionLevel.None;
+        foreach (var ascension in Enum.GetValues<AscensionLevel>())
+        {
+            if (RunManager.Instance.AscensionManager.HasLevel(ascension)) ascensionLevel = ascension;
+        }
+        WriteIt($"=== Ascension Level: `{ascensionLevel}` ===\\");
+        
         if (_runSeed != null) WriteIt($"=== Run **seeded** `{_runSeed}` ===\\");
-        
-        AfterActEntered();
     }
 
     public void OnRunEnd(long startTime)

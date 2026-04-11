@@ -27,12 +27,4 @@ public partial class CombatReplayTracker
         WriteIt($"> I **gained** `{(int) amount}` energy <\\");
         _db.TotalEnergyGained += (int) amount;
     }
-   
-    private static string FormatPlayer(Player player, bool useTitle = false)
-    {
-        var playerName = (LocalContext.IsMe(player) && !useTitle) ? "I" : $"Player: `{player.Character.Title.GetFormattedText()}`";
-        return (player.Creature.CombatId != null)
-            ? $"{playerName} (`{player.Creature.CombatId}`)"
-            : $"{playerName} (`{player.NetId}`)";
-    }
 }

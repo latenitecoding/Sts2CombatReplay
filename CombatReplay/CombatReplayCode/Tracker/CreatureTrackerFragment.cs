@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -41,6 +42,15 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
+    public void OnCreatureHeal(Creature creature, Decimal amount)
+    {
+        if (_db.CurrentRoom <= 1) return;
+        var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
+        WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP <\\");
+        if (!LocalContext.IsMe(creature)) return;
+        _db.TotalHpHealed += trueAmount;
+    }
+
     public void OnRollMove(Creature owner, MoveState state)
     {
         // this action is called twice when entering a room with combat; this filters out the first
@@ -63,5 +73,13 @@ public partial class CombatReplayTracker
         return (creature.CombatId != null)
             ? $"`{creature.Name}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
             : $"`{creature.Name}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
+    }
+    
+    private static string FormatPlayer(Player player)
+    {
+        if (LocalContext.IsMe(player)) return "I";
+        return (player.Creature.CombatId != null)
+            ? $"{player.Character.Title.GetFormattedText()} (`{player.Creature.CombatId}`)"
+            : $"{player.Character.Title.GetFormattedText()} (`{player.NetId}`)";
     }
 }

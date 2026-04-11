@@ -18,13 +18,15 @@ public partial class CombatReplayTracker
 
     public override Task AfterCardEnteredCombat(CardModel card)
     {
-        // if this comes after a card added, then that event already populated the message correctly
-        if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardAdded)
+        // this covers all cases of transformed, created, and given cards
+        // there could be other cards that trigger both OnCardAdded and this event
+        // the following condition is here to catch those possible cases
+        if (_logger?.PeekBufferType() == ReplayLogger.MsgType.CardAdded)
         {
             _logger?.Flush();
             return Task.CompletedTask;
         }
-        if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardCreated)
+        if (_logger?.PeekBufferType() == ReplayLogger.MsgType.CardCreated)
         {
             // replace the card created output with this now that the pileType has been populated
             BufferIt(
@@ -32,7 +34,8 @@ public partial class CombatReplayTracker
                 ReplayLogger.MsgType.CardEntered,
                 ReplayLogger.MsgType.CardCreated);
             _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
-        } else if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardGiven)
+        }
+        else if (_logger?.PeekBufferType() == ReplayLogger.MsgType.CardGiven)
         {
             // replace the card given output with this now that the pileType has been populated
             BufferIt(
@@ -42,7 +45,7 @@ public partial class CombatReplayTracker
         }
         else
         {
-            // covers all other cases for how cards can enter into combat
+            // covers all other cases for how cards can enter into combat, such as transform
             WriteIt(
                 $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\");
         }
@@ -52,10 +55,11 @@ public partial class CombatReplayTracker
     public override Task AfterCardDrawn(PlayerChoiceContext ctx, CardModel card, bool fromHandDraw)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        // card draw events can come after card added events, but we don't want to double log card added to hand
-        if (_logger?.GetBufferType() != ReplayLogger.MsgType.CardAdded) _db.OnCardDrawn(card.Title);
+        // this event is always called when a card is drawn from the deck into hand
+        // the event for OnCardAdded is also called in those cases and should be replaced with this event
+        // do not double count the number of times are card is added to hand
+        if (_logger?.PeekBufferType() != ReplayLogger.MsgType.CardAdded) _db.OnCardDrawn(card.Title);
         else _db.TotalCardsDrawn++;
-        // replace cards added to hand with card drawn to hand
         BufferIt(
             $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} <\\",
             ReplayLogger.MsgType.Draw,
@@ -67,6 +71,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         // created and given cards, like statuses, will trigger this, but their pileType won't be populated yet
+        // these events are being buffered to be replaced later in the AfterCardEnteredCombat (always called)
         if (addedByPlayer)
         {
             BufferIt($"> I **created** `{card.Title}` <\\", ReplayLogger.MsgType.CardCreated);
@@ -75,15 +80,22 @@ public partial class CombatReplayTracker
         BufferIt($"> I **gained** `{card.Title}` <\\", ReplayLogger.MsgType.CardGiven);
     }
 
-    // OnCardAdded is generally called when cards are created or drawn
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)
     {
+        // there are several flows for this event:
+        // - card added -> card drawn to hand (handled in AfterCardDrawn)
+        // - card added because it was moved from a non-hand pile to a non-hand pile (ignore)
+        // - card added because it was moved from a non-hand pile to a hand pile (handled here)
+        // - card is created by the player and added to hand (handled in AfterCardEnteredCombat)
+        // - status card is given by enemy and added to a card pile (handled in AfterCardEnteredCombat)
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
-        // created and given cards, like statuses, will trigger this, but we have other output for those events
-        if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardCreated) return;
-        if (_logger?.GetBufferType() == ReplayLogger.MsgType.CardGiven) return;
+        // cards that are created by the player or given by an enemy will also trigger the AfterCardEnteredCombat event
+        if (_logger?.PeekBufferType() == ReplayLogger.MsgType.CardCreated) return;
+        if (_logger?.PeekBufferType() == ReplayLogger.MsgType.CardGiven) return;
+        // only interested in logging cards that are added to hand to keep track of cards in hand
         if (pileType != PileType.Hand) return;
-        // log all non-created cards that are pulled into hand and expect to replace this with a draw event
+        // cards that are drawn to hand will trigger this event so we need to buffer this to replace it later
+        // cards can be pulled from other piles and added to hand, which is the only case that should be logged here
         BufferIt($"> {FormatPlayer(card.Owner)} **pulled** {FormatCard(card)} **into** `{pileType.ToString()}` <\\", ReplayLogger.MsgType.CardAdded);
         _db.OnCardAddedToHand(card.Title);
     }
@@ -101,6 +113,10 @@ public partial class CombatReplayTracker
     public void OnTransformCard(Player owner, CardModel original)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        // transform card events are always followed by AfterCardEnteredCombat events
+        // the AfterCardEnteredCombat events have the finalized card data
+        // this event only has the name of the card being transformed
+        // this is due to having to use prefix patches on async Tasks
         WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
     }
     
