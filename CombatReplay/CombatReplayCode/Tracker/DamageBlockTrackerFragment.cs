@@ -12,7 +12,9 @@ public partial class CombatReplayTracker
 {
     public override Task AfterBlockBroken(Creature creature)
     {
-        BufferBefore($"> {FormatCreature(creature)} **broken** <\\", ReplayLogger.MsgType.BlockBroken, ReplayLogger.MsgType.PetHit);
+        BufferBefore(
+            $"> {FormatCreature(creature)} **broken** <\\", ReplayLogger.MsgType.BlockBroken, 
+            ReplayLogger.MsgType.PetWasHit);
         return Task.CompletedTask;
     }
 
@@ -45,7 +47,7 @@ public partial class CombatReplayTracker
         {
             BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
-                ReplayLogger.MsgType.PetHit);
+                ReplayLogger.MsgType.PetWasHit);
             _db.OnCombatDamageDealt(dealer, target, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
             return Task.CompletedTask;
         }
@@ -53,6 +55,13 @@ public partial class CombatReplayTracker
         if (dealer != null && cardSource != null)
         {
             WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\");
+        }
+        else if (dealer is { IsPlayer: true })
+        {
+            BufferBefore(
+                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.RpoHit,
+                ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer != null)
         {
@@ -87,7 +96,7 @@ public partial class CombatReplayTracker
         {
             BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
-                    ReplayLogger.MsgType.PetHit);
+                    ReplayLogger.MsgType.PetWasHit);
             _db.OnCombatDamageDealt(dealer, target, cardSource, (int) amount, target.CurrentHp, target.Block);
             return Task.CompletedTask;
         }
@@ -95,6 +104,13 @@ public partial class CombatReplayTracker
         if (dealer != null && cardSource != null)
         {
             WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target)} <\\");
+        }
+        else if (dealer is { IsPlayer : true })
+        {
+            BufferBefore(
+                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.RpoHit,
+                ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer != null)
         {
