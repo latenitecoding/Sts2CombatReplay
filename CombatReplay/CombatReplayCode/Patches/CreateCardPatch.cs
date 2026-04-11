@@ -21,12 +21,8 @@ public class CreateCardPatch
             });
     }
 
-    static void Prefix(CardModel card, PileType newPileType, bool addedByPlayer)
+    static void Prefix(CardModel card, bool addedByPlayer)
     {
-        MainFile.Tracker.OnAddGeneratedCard(
-            card.Owner,
-            card,
-            addedByPlayer,
-            newPileType == PileType.Hand);
+        MainFile.Tracker.OnAddGeneratedCard(card.Owner, card, addedByPlayer);
     }
 }

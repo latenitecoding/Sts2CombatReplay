@@ -25,6 +25,8 @@ public partial class CombatReplayTracker
     
         MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
         _db.InProgressSave();
+
+        _playerCreatedCards.Clear();
         
         return Task.CompletedTask;
     }
@@ -116,6 +118,7 @@ public partial class CombatReplayTracker
         {
             case CombatSide.Player:
                 WriteIt("=== Player phase **ended** ===\\");
+                _playerCreatedCards.Clear();
                 break;
             case CombatSide.Enemy:
                 WriteIt($"=== Turn: {_db.CurrentTurn} **ended** ===\\");

@@ -15,10 +15,12 @@ public partial class CombatReplayTracker
         ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
     };
 
+    private readonly HashSet<string> _playerCreatedCards = [];
+
     public override Task AfterCardEnteredCombat(CardModel card)
     {
         WriteIt($"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} <\\");
-        _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
+        _db.OnCardCreated(card.Title, _playerCreatedCards.Contains(card.Title), card.Pile is { Type: PileType.Hand });
         return Task.CompletedTask;
     }
 
@@ -30,9 +32,10 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer, bool addedToHand)
+    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        if (addedByPlayer) _playerCreatedCards.Add(card.Title);
         WriteIt(addedByPlayer
             ? $"> {FormatPlayer(owner)} **created** `{card.Title}` <\\"
             : $"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
