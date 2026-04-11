@@ -54,13 +54,16 @@ public partial class CombatReplayDb
         }
     }
 
-    public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
+    public void OnCardAdded(string cardTitle, bool addedToHand)
     {
         var cardStats = GetOrCreateCardStats(cardTitle);
-        if (addedToHand)
-        {
-            cardStats.TimesAddedToHand++;
-        }
+        if (!addedToHand) return;
+        cardStats.TimesAddedToHand++;
+    }
+
+    public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
+    {
+        OnCardAdded(cardTitle, addedToHand);
         if (addedByPlayer)
         {
             TotalCardsCreated += 1;

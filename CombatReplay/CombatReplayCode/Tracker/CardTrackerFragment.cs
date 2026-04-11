@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -18,9 +17,7 @@ public partial class CombatReplayTracker
 
     public override Task AfterCardEnteredCombat(CardModel card)
     {
-        WriteIt(card.Pile != null
-            ? $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **in** `{card.Pile.Type.ToString()}` <\\"
-            : $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} <\\");
         _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
         return Task.CompletedTask;
     }
@@ -39,6 +36,13 @@ public partial class CombatReplayTracker
         WriteIt(addedByPlayer
             ? $"> {FormatPlayer(owner)} **created** `{card.Title}` <\\"
             : $"> {FormatPlayer(owner)} **was** **given** `{card.Title}` <\\");
+    }
+
+    public void OnCardAdded(Player owner, CardModel card, PileType pileType)
+    {
+        if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
+        WriteIt($"> {FormatPlayer(card.Owner)} **added** `{card.Title}` **to** `{pileType.ToString()}` <\\");
+        _db.OnCardAdded(card.Title, pileType == PileType.Hand);
     }
     
     public void OnExecuteCard(PlayCardAction action)

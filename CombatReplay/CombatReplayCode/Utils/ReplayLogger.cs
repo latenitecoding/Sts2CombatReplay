@@ -16,6 +16,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             {
                 MainFile.Logger.Info($"Using existing save @ `{_savePath}`");
                 _writer = new StreamWriter(_savePath, append: true);
+                WriteIt("@@@ Loaded **save** @@@\\");
                 return;
             }
             if (File.Exists(_savePath)) MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
