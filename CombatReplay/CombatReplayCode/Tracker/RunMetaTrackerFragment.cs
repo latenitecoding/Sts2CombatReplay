@@ -1,3 +1,5 @@
+using MegaCrit.Sts2.Core.Runs;
+
 namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
@@ -22,6 +24,8 @@ public partial class CombatReplayTracker
 
     public void OnRoomExited()
     {
+        // sometimes the OnActEntered isn't called in Neow's room
+        if (_db.CurrentAct == 0) OnActEntered();
         WriteIt($"=== Room: {_db.CurrentRoom} **exited** ===\\");
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");

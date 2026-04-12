@@ -44,6 +44,9 @@ public partial class CombatReplayTracker : AbstractModel
 
         MainFile.Logger.Info("Initializing CombatReplayDb...");
 
+        // if the player plays multiple runs one after another, then we need to recreate the db
+        // if the db is on anything other than Act 0, it has already been used for a run
+        if (_db.CurrentAct > 0) _db = new CombatReplayDb();
         _db = (isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)
             ? CombatReplayDb.LoadFromFileOrElse(
                 saveManager.CurrentProfileId,
