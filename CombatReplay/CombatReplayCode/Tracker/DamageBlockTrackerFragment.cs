@@ -21,9 +21,10 @@ public partial class CombatReplayTracker
 
     public override Task AfterBlockGained(Creature creature, Decimal amount, ValueProp props, CardModel? cardSource)
     {
-        WriteIt(cardSource != null
+        BufferIt(cardSource != null
             ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {amount}`] <\\"
-            : $"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\");
+            : $"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\",
+            ReplayLogger.MsgType.BlockGained);
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         

@@ -4,6 +4,7 @@ public partial class CombatReplayDb
 {
     public string? RunSeed { get; set; }
     public bool IsMultiplayer { get; set; }
+    public string AscensionLevel { get; set; }
     public int CurrentAct { get; set; }
     public int CurrentRoom { get; set; }
     public int CurrentCombat { get; set; }

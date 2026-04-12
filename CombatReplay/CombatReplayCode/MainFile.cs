@@ -1,11 +1,7 @@
-using CombatReplay.CombatReplayCode.Tracker;
 using Godot;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode;
@@ -25,7 +21,6 @@ public partial class MainFile : Node
     
     private static void OnRunStarted(RunState state) => Tracker.OnRunStart();
     private static void OnActEntered() => Tracker.OnActEntered();
-    private static void OnRoomEntered() => Tracker.OnRoomEntered();
     private static void OnRoomExited() => Tracker.OnRoomExited();
 
     public static void Initialize()
@@ -41,8 +36,6 @@ public partial class MainFile : Node
         RunManager.Instance.RunStarted += OnRunStarted;
         // the best (if not only) act start hook
         RunManager.Instance.ActEntered += OnActEntered;
-        // the best (if not only) room entered hook
-        RunManager.Instance.RoomEntered += OnRoomEntered;
         // the best (if not only) room exited hook
         RunManager.Instance.RoomExited += OnRoomExited;
 

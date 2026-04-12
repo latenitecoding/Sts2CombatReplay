@@ -11,16 +11,19 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     public enum MsgType
     {
+        AllCard,
         BlockBroken,
+        BlockGained,
         CardAdded,
         CardCreated,
+        CardDrawn,
         CardEntered,
         CardGiven,
-        Draw,
+        Defeated,
         None,
         OrbEvoked,
         PetWasHit,
-        RpoHit // Relic-Power-Orb Hit
+        RpoHit // Relic-Power/Potion-Orb Hit
     }
     
     private record BufferedMsg(string Msg, MsgType MsgType);
@@ -40,7 +43,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             {
                 tmp.Push(_bufferStack.Last());
                 _bufferStack.RemoveLast();
-                if (tmp.Peek().MsgType != preceded) continue;
+                if (!Matches(tmp.Peek().MsgType, preceded)) continue;
                 _bufferStack.AddLast(new BufferedMsg(msg, msgType));
                 while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
                 return;
@@ -57,11 +60,11 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         }
     }
 
-    public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None)
+    public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None, bool autoFlush = true)
     {
         lock (_writerLock)
         {
-            if (overwrite != MsgType.None && PeekBufferType() == overwrite)
+            if (overwrite != MsgType.None && Matches(PeekBufferType(), overwrite))
             {
                 _bufferStack.RemoveLast();
                 _bufferStack.AddLast(new BufferedMsg(msg, msgType));
@@ -69,8 +72,8 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             }
         }
 
-        // don't keep unrelated events together in the same buffer
-        Flush();
+        // don't keep unrelated events together in the same buffer if autoFlush is set
+        if (autoFlush) Flush();
 
         lock (_writerLock)
         {
@@ -133,12 +136,12 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     public MsgType PeekBufferType() => _bufferStack.Count > 0 ? _bufferStack.Last().MsgType : MsgType.None;
 
-    public void WriteBefore(string msg, MsgType msgType)
+    public void WriteBefore(string msg, MsgType preceded)
     {
         if (_savePath == null || _writer == null) return;
         lock (_writerLock)
         {
-            while (_bufferStack.Count > 0 && _bufferStack.First().MsgType != msgType)
+            while (_bufferStack.Count > 0 && !Matches(_bufferStack.First().MsgType, preceded))
             {
                 _writer.WriteLine(_bufferStack.First().Msg);
                 _bufferStack.RemoveFirst();
@@ -157,5 +160,20 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             _writer.WriteLine(msg);
             _writer.Flush();
         }
+    }
+
+    private static bool Matches(MsgType m1, MsgType m2)
+    {
+        if (m1 is MsgType.AllCard)
+        {
+            return m2 is MsgType.CardAdded or MsgType.CardCreated or MsgType.CardDrawn or MsgType.CardEntered or MsgType.CardGiven;
+        }
+
+        if (m2 is MsgType.AllCard)
+        {
+            return m1 is MsgType.CardAdded or MsgType.CardCreated or MsgType.CardDrawn or MsgType.CardEntered or MsgType.CardGiven;
+        }
+        
+        return m1 == m2;
     }
 }

@@ -1,5 +1,7 @@
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -16,10 +18,28 @@ public partial class CombatReplayTracker
     
     public override Task AfterPotionUsed(PotionModel potion, Creature? target)
     {
+        var precededMsgType = potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is DamageVar)
+            ? ReplayLogger.MsgType.RpoHit
+            : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is BlockVar)
+                ? ReplayLogger.MsgType.BlockGained
+                : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is CardsVar)
+                    ? ReplayLogger.MsgType.AllCard
+                    :  ReplayLogger.MsgType.None;
         // unlike other events, this should be triggered for all players so that we can see what potions other players are using
-        WriteIt(target != null
-            ? $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` **on** {FormatCreature(target)} <\\"
-            : $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` <\\");
+        if (precededMsgType is ReplayLogger.MsgType.None)
+        {
+            WriteIt(target != null
+                ? $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` **on** {FormatCreature(target)} <\\"
+                : $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` <\\");
+        }
+        else
+        {
+            WriteBefore(target != null
+                    ? $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` **on** {FormatCreature(target)} <\\"
+                    : $"> {FormatPlayer(potion.Owner)} **used** `{FormatPotion(potion)}` <\\",
+                precededMsgType);
+        }
+
         if (LocalContext.IsMe(potion.Owner)) _db.TotalPotionsUsed++;
         return Task.CompletedTask;
     }

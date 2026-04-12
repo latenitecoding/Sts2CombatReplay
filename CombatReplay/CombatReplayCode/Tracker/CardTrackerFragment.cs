@@ -62,7 +62,7 @@ public partial class CombatReplayTracker
         else _db.TotalCardsDrawn++;
         BufferIt(
             $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} <\\",
-            ReplayLogger.MsgType.Draw,
+            ReplayLogger.MsgType.CardDrawn,
             overwrite: ReplayLogger.MsgType.CardAdded);
         return Task.CompletedTask;
     }

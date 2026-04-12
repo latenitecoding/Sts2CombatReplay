@@ -63,6 +63,7 @@ public partial class CombatReplayTracker : AbstractModel
             if (RunManager.Instance.AscensionManager.HasLevel(ascension)) ascensionLevel = ascension;
         }
         WriteIt($"=== Ascension Level: `{ascensionLevel}` ===\\");
+        _db.AscensionLevel = ascensionLevel.ToString();
         
         if (_runSeed != null) WriteIt($"=== Run **seeded** `{_runSeed}` ===\\");
     }
@@ -82,9 +83,9 @@ public partial class CombatReplayTracker : AbstractModel
         _logger?.BufferBefore(msg, msgType, preceded);
     }
 
-    private void BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None)
+    private void BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
     {
-        _logger?.BufferIt(msg, msgType, overwrite);
+        _logger?.BufferIt(msg, msgType, overwrite, autoFlush);
     }
 
     private void WriteBefore(string msg, ReplayLogger.MsgType preceded)

@@ -1,3 +1,4 @@
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -12,7 +13,7 @@ public partial class CombatReplayTracker
     public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
         float deathAnimLength)
     {
-        WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
+        BufferIt($"> {FormatCreature(creature)} **defeated** <\\", ReplayLogger.MsgType.Defeated, autoFlush: false);
         return Task.CompletedTask; 
     }
 
