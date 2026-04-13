@@ -22,9 +22,11 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
 
-    public void OnGainEnergy(Decimal amount)
+    public void OnGainEnergy(PlayerCombatState combatState, Decimal amount)
     {
-        WriteIt($"> I **gained** `{(int) amount}` energy <\\");
+        var player = combatState.AllCards.First().Owner;
+        WriteIt($"> {FormatPlayer(player)} **gained** `{(int) amount}` energy <\\");
+        if (!LocalContext.IsMe(player)) return;
         _db.TotalEnergyGained += (int) amount;
     }
 }

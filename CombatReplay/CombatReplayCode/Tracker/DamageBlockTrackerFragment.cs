@@ -55,12 +55,13 @@ public partial class CombatReplayTracker
         }
         else if (dealer is { IsPlayer: true })
         {
+            // some player RPO hits only trigger BeforeDamageReceived and others trigger both
+            // if this is one that triggers both, we need to overwrite the prior playerRpoHit
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
-            BufferBefore(
+            WriteIt(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
-                ReplayLogger.MsgType.RpoHit,
-                ReplayLogger.MsgType.BlockBroken);
+                ReplayLogger.MsgType.BeforeDamage);
         }
         else if (dealer != null)
         {
@@ -99,7 +100,12 @@ public partial class CombatReplayTracker
         //  - remaining damage dealt to pet owner
         // as such, any damage to the pet would have already had the pet owner's block deducted from it
         var permittedBlock = dealer != null && dealer != target ? target.Block : 0;
-        if (permittedBlock + target.CurrentHp > (int) amount) return Task.CompletedTask;
+        // some playerRpoHits only trigger BeforeDamageReceived even if they are non-lethal
+        var playerRpoHit = dealer is { IsPlayer : true } && cardSource == null && target.IsEnemy;
+        if (permittedBlock + target.CurrentHp > (int) amount && !playerRpoHit)
+        {
+            return Task.CompletedTask;
+        }
 
         if (dealer != null && target is { IsPet: true } && LocalContext.IsMe(target.PetOwner))
         {
@@ -123,7 +129,7 @@ public partial class CombatReplayTracker
             // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
             BufferBefore(
                 $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target)} <\\",
-                ReplayLogger.MsgType.RpoHit,
+                ReplayLogger.MsgType.BeforeDamage | ReplayLogger.MsgType.RpoHit,
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer != null)

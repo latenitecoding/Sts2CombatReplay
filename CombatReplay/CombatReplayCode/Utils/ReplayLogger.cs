@@ -9,9 +9,11 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     private readonly LinkedList<BufferedMsg> _bufferStack = [];
 
+    [Flags]
     public enum MsgType
     {
-        AllCard,
+        None,
+        BeforeDamage,
         BlockBroken,
         BlockGained,
         CardAdded,
@@ -20,15 +22,26 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         CardEntered,
         CardGiven,
         Defeated,
-        None,
         OrbEvoked,
         PetWasHit,
         RpoHit // Relic-Power/Potion-Orb Hit
     }
+
+    public static MsgType AllCardTypes()
+    {
+        return MsgType.CardAdded | MsgType.CardCreated | MsgType.CardDrawn | MsgType.CardEntered | MsgType.CardGiven;
+    }
+
+    public static bool Matches(MsgType? flags, MsgType flag)
+    {
+        if (flags == null) return false;
+        if (flags == 0) return flag == 0;
+        return (flags & flag) > 0;
+    }
     
     private record BufferedMsg(string Msg, MsgType MsgType);
 
-    public void BufferBefore(string msg, MsgType msgType, MsgType preceded)
+    public void BufferBefore(string msg, MsgType msgType, MsgType preceded, bool autoFlush = true)
     {
         lock (_writerLock)
         {
@@ -38,21 +51,15 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 return;
             }
 
-            var tmp = new Stack<BufferedMsg>();
-            while (_bufferStack.Count > 0)
+            for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
             {
-                tmp.Push(_bufferStack.Last());
-                _bufferStack.RemoveLast();
-                if (!Matches(tmp.Peek().MsgType, preceded)) continue;
-                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-                while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
+                if (!Matches(cur.Value.MsgType, preceded)) continue;
+                _bufferStack.AddBefore(cur, new BufferedMsg(msg, msgType));
                 return;
             }
-
-            while (tmp.Count > 0) _bufferStack.AddLast(tmp.Pop());
         }
         
-        Flush();
+        if (autoFlush) Flush();
         
         lock (_writerLock)
         {
@@ -64,11 +71,14 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     {
         lock (_writerLock)
         {
-            if (overwrite != MsgType.None && Matches(PeekBufferType(), overwrite))
+            if (overwrite != MsgType.None)
             {
-                _bufferStack.RemoveLast();
-                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-                return;
+                for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
+                {
+                    if (!Matches(cur.Value.MsgType, overwrite)) continue;
+                    cur.Value = new BufferedMsg(msg, msgType);
+                    return;
+                }
             }
         }
 
@@ -146,34 +156,26 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 _writer.WriteLine(_bufferStack.First().Msg);
                 _bufferStack.RemoveFirst();
             }
+
             _writer.WriteLine(msg);
             _writer.Flush();
         }
     }
     
-    public void WriteIt(string msg)
+    public void WriteIt(string msg, MsgType overwrite = MsgType.None)
     {
         if (_savePath == null || _writer == null) return;
+        if (overwrite != MsgType.None)
+        {
+            BufferIt(msg, MsgType.None, overwrite, autoFlush: false);
+            Flush();
+            return;
+        }
         Flush();
         lock (_writerLock)
         {
             _writer.WriteLine(msg);
             _writer.Flush();
         }
-    }
-
-    private static bool Matches(MsgType m1, MsgType m2)
-    {
-        if (m1 is MsgType.AllCard)
-        {
-            return m2 is MsgType.CardAdded or MsgType.CardCreated or MsgType.CardDrawn or MsgType.CardEntered or MsgType.CardGiven;
-        }
-
-        if (m2 is MsgType.AllCard)
-        {
-            return m1 is MsgType.CardAdded or MsgType.CardCreated or MsgType.CardDrawn or MsgType.CardEntered or MsgType.CardGiven;
-        }
-        
-        return m1 == m2;
     }
 }

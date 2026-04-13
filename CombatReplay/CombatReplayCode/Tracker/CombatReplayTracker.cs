@@ -81,9 +81,9 @@ public partial class CombatReplayTracker : AbstractModel
         _db.OnRunEnd(startTime);
     }
 
-    private void BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded)
+    private void BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded, bool autoFlush = true)
     {
-        _logger?.BufferBefore(msg, msgType, preceded);
+        _logger?.BufferBefore(msg, msgType, preceded, autoFlush);
     }
 
     private void BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
@@ -96,8 +96,8 @@ public partial class CombatReplayTracker : AbstractModel
         _logger?.WriteBefore(msg, preceded);
     }
 
-    private void WriteIt(string msg)
+    private void WriteIt(string msg, ReplayLogger.MsgType overwrite =  ReplayLogger.MsgType.None)
     {
-        _logger?.WriteIt(msg);
+        _logger?.WriteIt(msg, overwrite);
     }
 }

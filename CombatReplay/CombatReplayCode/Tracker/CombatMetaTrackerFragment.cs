@@ -13,7 +13,7 @@ public partial class CombatReplayTracker
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> I **discarded** `{card.Title}` <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **discarded** `{card.Title}` <\\");
         _db.OnCardDiscarded(card.Title);
         return Task.CompletedTask;
     }
@@ -35,7 +35,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted++;
-        WriteIt($"> I **exhausted** `{card.Title}` <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}` <\\");
         return Task.CompletedTask;
     }
     
@@ -43,7 +43,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsRetained++;
-        WriteIt($"> I **retained** {FormatCard(card)} <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **retained** {FormatCard(card)} **in** `Hand` pile <\\");
         return Task.CompletedTask;
     }
 
@@ -57,7 +57,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         _db.TotalEmptyHands++;
-        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` <\\");
+        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` pile <\\");
         return Task.CompletedTask;
     }
    
@@ -105,7 +105,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
         _db.TotalDeckShuffles++;
-        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard` <\\");
+        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard` pile <\\");
         return Task.CompletedTask;
     }
     

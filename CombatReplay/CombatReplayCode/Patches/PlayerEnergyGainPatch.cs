@@ -6,9 +6,9 @@ namespace CombatReplay.CombatReplayCode.Patches;
 [HarmonyPatch(typeof(PlayerCombatState), "GainEnergy")]
 public class PlayerEnergyGainPatch
 {
-    static void Postfix(Decimal amount)
+    static void Postfix(PlayerCombatState __instance, Decimal amount)
     {
         // I believe this only fires for the local player
-        MainFile.Tracker.OnGainEnergy(amount);
+        MainFile.Tracker.OnGainEnergy(__instance, amount);
     }
 }

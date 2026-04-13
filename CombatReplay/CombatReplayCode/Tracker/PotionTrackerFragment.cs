@@ -23,8 +23,8 @@ public partial class CombatReplayTracker
             : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is BlockVar)
                 ? ReplayLogger.MsgType.BlockGained
                 : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is CardsVar)
-                    ? ReplayLogger.MsgType.AllCard
-                    :  ReplayLogger.MsgType.None;
+                    ? ReplayLogger.AllCardTypes()
+                    : ReplayLogger.MsgType.None;
         // unlike other events, this should be triggered for all players so that we can see what potions other players are using
         if (precededMsgType is ReplayLogger.MsgType.None)
         {
