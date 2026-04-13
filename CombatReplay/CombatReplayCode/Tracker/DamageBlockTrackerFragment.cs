@@ -21,10 +21,11 @@ public partial class CombatReplayTracker
 
     public override Task AfterBlockGained(Creature creature, Decimal amount, ValueProp props, CardModel? cardSource)
     {
-        BufferIt(cardSource != null
-            ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {amount}`] <\\"
-            : $"> {FormatCreature(creature)} **gained** [`Block {amount}`] <\\",
-            ReplayLogger.MsgType.BlockGained);
+        BufferBefore(cardSource != null
+            ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {(int)amount}`] <\\"
+            : $"> {FormatCreature(creature)} **gained** [`Block {(int)amount}`] <\\",
+            ReplayLogger.MsgType.BlockGained,
+            ReplayLogger.MsgType.TookDamage);
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
         
@@ -59,8 +60,9 @@ public partial class CombatReplayTracker
             // if this is one that triggers both, we need to overwrite the prior playerRpoHit
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
-            WriteIt(
+            BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.RpoHit,
                 ReplayLogger.MsgType.BeforeDamage);
         }
         else if (dealer != null)
@@ -77,8 +79,9 @@ public partial class CombatReplayTracker
         else
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
-            WriteBefore(
+            BufferBefore(
                 $"> {FormatCreature(target)} **took** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\", 
+                ReplayLogger.MsgType.TookDamage,
                 ReplayLogger.MsgType.BlockBroken);
         }
         
@@ -146,8 +149,9 @@ public partial class CombatReplayTracker
         else
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
-            WriteBefore(
+            BufferBefore(
                 $"> {FormatCreature(target)} **took** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\",
+                ReplayLogger.MsgType.TookDamage,
                 ReplayLogger.MsgType.BlockBroken);
         }
 
