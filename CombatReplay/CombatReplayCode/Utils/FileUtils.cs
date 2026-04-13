@@ -21,7 +21,7 @@ public static class FileUtils
         return Path.Combine(destDir, WithStartTime(saveFile, startTime));
     }
 
-    public static string GetSavePath(int profileId, bool isMultiplayer, string saveFile) 
+    public static string GetSavePath(int profileId, bool isMultiplayer, string saveFile, string multiRunId) 
     {
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
         return Directory.GetDirectories(rootPath)
@@ -30,14 +30,14 @@ public static class FileUtils
             .Select(profilePath => Path.Combine(
                 profilePath,
                 "saves",
-                isMultiplayer ? AsMultiplayer(saveFile) : saveFile
+                isMultiplayer ? AsMultiplayer(saveFile, multiRunId) : saveFile
             ))
             .FirstOrDefault(GetDefaultSavePath(isMultiplayer, saveFile));
     }
 
-    private static string AsMultiplayer(string saveFile)
+    private static string AsMultiplayer(string saveFile, string multiRunId)
     {
-        return $"{Path.GetFileNameWithoutExtension(saveFile)}_mp{Path.GetExtension(saveFile)}";
+        return $"{Path.GetFileNameWithoutExtension(saveFile)}_{multiRunId}{Path.GetExtension(saveFile)}";
     }
 
     private static string WithStartTime(string saveFile, long startTime)
@@ -49,6 +49,6 @@ public static class FileUtils
     {
         return Path.Combine(
             ProjectSettings.GlobalizePath("user://"),
-            isMultiplayer ? AsMultiplayer(saveFile) : saveFile);
+            isMultiplayer ? AsMultiplayer(saveFile, "mp") : saveFile);
     }
 }

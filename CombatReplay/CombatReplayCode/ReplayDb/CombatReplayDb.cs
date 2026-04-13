@@ -10,9 +10,9 @@ public partial class CombatReplayDb
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    public static CombatReplayDb LoadFromFileOrElse(int profileId, bool isMultiplayer, string saveFile, CombatReplayDb db)
+    public static CombatReplayDb LoadFromFileOrElse(int profileId, bool isMultiplayer, string saveFile, CombatReplayDb db, string multiRunId = "mp")
     {
-        var savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile);
+        var savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile, multiRunId);
         return File.Exists(savePath)
             ? JsonSerializer.Deserialize<CombatReplayDb>(File.ReadAllText(savePath), JsonOptions)?
                 .Init(profileId, saveFile, savePath) ?? db.Init(profileId, isMultiplayer, saveFile)
@@ -23,10 +23,10 @@ public partial class CombatReplayDb
     private string? _saveFile;
     private string? _savePath;
 
-    public CombatReplayDb Init(int profileId, bool isMultiplayer, string saveFile)
+    public CombatReplayDb Init(int profileId, bool isMultiplayer, string saveFile, string multiRunId = "mp")
     {
         IsMultiplayer = isMultiplayer;
-        return Init(profileId, saveFile, FileUtils.GetSavePath(profileId, isMultiplayer, saveFile));
+        return Init(profileId, saveFile, FileUtils.GetSavePath(profileId, isMultiplayer, saveFile, multiRunId));
     }
 
     private CombatReplayDb Init(int profileId, string saveFile, string savePath)

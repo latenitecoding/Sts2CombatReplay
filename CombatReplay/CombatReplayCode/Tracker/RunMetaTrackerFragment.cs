@@ -4,8 +4,6 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    private string? _runSeed;
-
     public void OnActEntered()
     {
         // there is an AfterActEntered, but it doesn't appear to be called by the game
@@ -33,12 +31,5 @@ public partial class CombatReplayTracker
 
         // this is called here to ensure that the room is logged before the setup of the room
         OnRoomEntered();
-    }
-    
-    public void UpdateSeed(string seed)
-    {
-        if (_runSeed != null) return;
-        _runSeed = seed;
-        _db.RunSeed = seed;
     }
 }

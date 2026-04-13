@@ -14,8 +14,17 @@ public partial class CombatReplayTracker : AbstractModel
     // Required by AbstractModel; used for hooking into ModHelper
     public override bool ShouldReceiveCombatHooks => true;
 
+    private string _multiplayerRunId = "mp";
+    private string? _runSeed;
+
     private ReplayLogger? _logger;
     private CombatReplayDb _db = new();
+
+    public void OnInitializeRun(INetGameService netService, long startTime)
+    {
+        if (!netService.Type.IsMultiplayer()) return;
+        _multiplayerRunId = $"{startTime}_mp";
+    }
     
     public void OnRunStart()
     {
@@ -32,14 +41,17 @@ public partial class CombatReplayTracker : AbstractModel
         MainFile.Logger.Info(isMultiplayer
             ? "RunManager is starting a Multiplayer run"
             : "RunManager is starting a Singleplayer run");
-
-        MainFile.Logger.Info("Starting ReplayLogger...");
         
+        _multiplayerRunId = _runSeed != null ? $"{_runSeed}_{_multiplayerRunId}" : _multiplayerRunId;
+        
+        MainFile.Logger.Info("Starting ReplayLogger...");
+
         _logger = new ReplayLogger(
             saveManager.CurrentProfileId,
             isMultiplayer,
             "sts2_combat_tracker_current.replay",
-            isMultiplayer ? saveManager.HasMultiplayerRunSave : saveManager.HasRunSave);
+            isMultiplayer ? saveManager.HasMultiplayerRunSave : saveManager.HasRunSave,
+            multiRunId: _multiplayerRunId);
         _logger.OnRunStart();
 
         MainFile.Logger.Info("Initializing CombatReplayDb...");
@@ -52,8 +64,13 @@ public partial class CombatReplayTracker : AbstractModel
                 saveManager.CurrentProfileId,
                 isMultiplayer,
                 "sts2_combat_stats_current.json",
-                _db)
-            : _db.Init(saveManager.CurrentProfileId, isMultiplayer, "sts2_combat_stats_current.json");
+                _db,
+                multiRunId: _multiplayerRunId)
+            : _db.Init(
+                saveManager.CurrentProfileId,
+                isMultiplayer,
+                "sts2_combat_stats_current.json",
+                multiRunId: _multiplayerRunId);
         _db.RunSeed = _runSeed;
 
         if ((isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)) return;
@@ -80,7 +97,14 @@ public partial class CombatReplayTracker : AbstractModel
         _logger?.OnRunEnd(startTime);
         _db.OnRunEnd(startTime);
     }
-
+    
+    public void UpdateSeed(string seed)
+    {
+        if (_runSeed != null) return;
+        _runSeed = seed;
+        _db.RunSeed = seed;
+    }
+    
     private void BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded, bool autoFlush = true)
     {
         _logger?.BufferBefore(msg, msgType, preceded, autoFlush);

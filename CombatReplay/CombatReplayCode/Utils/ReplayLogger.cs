@@ -1,6 +1,6 @@
 namespace CombatReplay.CombatReplayCode.Utils;
 
-public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bool loadSave)
+public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bool loadSave, string multiRunId = "mp")
 {
     private string? _savePath;
     
@@ -130,7 +130,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     
     public void OnRunStart()
     {
-        _savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile);
+        _savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile, multiRunId);
         lock (_writerLock)
         {
             if (loadSave)
