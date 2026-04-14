@@ -4,6 +4,20 @@ namespace CombatReplay.CombatReplayCode.Utils;
 
 public static class FileUtils
 {
+    public static bool CheckSavePath(int profileId, bool isMultiplayer, string saveFile, string multiRunId) 
+    {
+        var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");
+        return Directory.GetDirectories(rootPath)
+            .Select(dir => Path.Combine(rootPath, dir, "modded", $"profile{profileId}"))
+            .Where(Directory.Exists)
+            .Select(profilePath => Path.Combine(
+                profilePath,
+                "saves",
+                isMultiplayer ? AsMultiplayer(saveFile, multiRunId) : saveFile
+            ))
+            .Any();
+    }
+
     public static string? GetHistoryPath(int profileId, long startTime, string saveFile)
     {
         var rootPath = Path.Combine(ProjectSettings.GlobalizePath("user://"), "steam");

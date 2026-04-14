@@ -11,10 +11,14 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker : AbstractModel
 {
+    public static string DbFile = "sts2_combat_tracker_current.replay";
+    public static string TrackerFile = "sts2_combat_tracker_current.replay";
+    
     // Required by AbstractModel; used for hooking into ModHelper
     public override bool ShouldReceiveCombatHooks => true;
 
     private string _multiplayerRunId = "mp";
+    private long? _multiplayerStartTime;
     private string? _runSeed;
 
     private ReplayLogger? _logger;
@@ -24,6 +28,7 @@ public partial class CombatReplayTracker : AbstractModel
     {
         if (!netService.Type.IsMultiplayer()) return;
         _multiplayerRunId = $"{startTime}_mp";
+        _multiplayerStartTime = startTime;
     }
     
     public void OnRunStart()
@@ -34,23 +39,48 @@ public partial class CombatReplayTracker : AbstractModel
         
         MainFile.Logger.Info($"SaveManager Profile ID {saveManager.CurrentProfileId}");
         MainFile.Logger.Info($"SaveManager has Singleplayer Save: {saveManager.HasRunSave}");
-        MainFile.Logger.Info($"SaveManager has Multiplayer Save: {saveManager.HasMultiplayerRunSave}");
 
         var isMultiplayer = RunManager.Instance.NetService.Type.IsMultiplayer();
 
         MainFile.Logger.Info(isMultiplayer
             ? "RunManager is starting a Multiplayer run"
             : "RunManager is starting a Singleplayer run");
-        
-        _multiplayerRunId = _runSeed != null ? $"{_runSeed}_{_multiplayerRunId}" : _multiplayerRunId;
+
+        var multiplayerInProgress =
+            FileUtils.CheckSavePath(saveManager.CurrentProfileId, isMultiplayer, TrackerFile, _multiplayerRunId);
+        if (_multiplayerStartTime.HasValue && !multiplayerInProgress)
+        {
+            // sometimes when reloading a multiplayer run, the start time will be one more than it should be
+            var wrongMultiplayerRunId = $"{_multiplayerStartTime.Value - 1}_mp";
+            multiplayerInProgress = FileUtils.CheckSavePath(
+                saveManager.CurrentProfileId,
+                isMultiplayer,
+                TrackerFile,
+                wrongMultiplayerRunId);
+            if (multiplayerInProgress)
+            {
+                var wrongSaveFile = FileUtils.GetSavePath(
+                    saveManager.CurrentProfileId,
+                    isMultiplayer,
+                    TrackerFile,
+                    wrongMultiplayerRunId);
+                var rightSaveFile = FileUtils.GetSavePath(
+                    saveManager.CurrentProfileId,
+                    isMultiplayer,
+                    TrackerFile,
+                    _multiplayerRunId);
+                File.Move(wrongSaveFile, rightSaveFile);
+            }
+        }
+        MainFile.Logger.Info($"Multiplayer game in progress {multiplayerInProgress}");
         
         MainFile.Logger.Info("Starting ReplayLogger...");
 
         _logger = new ReplayLogger(
             saveManager.CurrentProfileId,
             isMultiplayer,
-            "sts2_combat_tracker_current.replay",
-            isMultiplayer ? saveManager.HasMultiplayerRunSave : saveManager.HasRunSave,
+            TrackerFile,
+            isMultiplayer ? multiplayerInProgress : saveManager.HasRunSave,
             multiRunId: _multiplayerRunId);
         _logger.OnRunStart();
 
@@ -59,21 +89,21 @@ public partial class CombatReplayTracker : AbstractModel
         // if the player plays multiple runs one after another, then we need to recreate the db
         // if the db is on anything other than Act 0, it has already been used for a run
         if (_db.CurrentAct > 0) _db = new CombatReplayDb();
-        _db = (isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)
+        _db = (isMultiplayer && multiplayerInProgress) || (!isMultiplayer && saveManager.HasRunSave)
             ? CombatReplayDb.LoadFromFileOrElse(
                 saveManager.CurrentProfileId,
                 isMultiplayer,
-                "sts2_combat_stats_current.json",
+                DbFile,
                 _db,
                 multiRunId: _multiplayerRunId)
             : _db.Init(
                 saveManager.CurrentProfileId,
                 isMultiplayer,
-                "sts2_combat_stats_current.json",
+                DbFile,
                 multiRunId: _multiplayerRunId);
         _db.RunSeed = _runSeed;
 
-        if ((isMultiplayer && saveManager.HasMultiplayerRunSave) || (!isMultiplayer && saveManager.HasRunSave)) return;
+        if ((isMultiplayer && multiplayerInProgress) || (!isMultiplayer && saveManager.HasRunSave)) return;
         
         WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId} #");
 
