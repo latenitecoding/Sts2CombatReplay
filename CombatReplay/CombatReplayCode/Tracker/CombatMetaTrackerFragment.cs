@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -65,9 +64,8 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         
-        _db.OnNextTurn();
-        WriteIt($"=== Turn: {_db.CurrentTurn} **started** ===");
-
+        WriteIt("=== Player phase **started** ===\\");
+        
         foreach (var creature in _db.GetCombatCreatureList())
         {
             if (creature.IsDead)
@@ -130,6 +128,16 @@ public partial class CombatReplayTracker
     {
         _db.OnStartCombat();
         WriteIt($"=== Combat: {_db.CurrentCombat} **started** ===");
+        
+        return Task.CompletedTask;
+    }
+
+    public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, CombatState combatState)
+    {
+        if (side != CombatSide.Player) return Task.CompletedTask;
+        
+        _db.OnNextTurn();
+        WriteIt($"=== Turn: {_db.CurrentTurn} **started** ===");
         
         return Task.CompletedTask;
     }
