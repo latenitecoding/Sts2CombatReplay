@@ -15,8 +15,7 @@ public static class FileUtils
                 "saves",
                 isMultiplayer ? AsMultiplayer(saveFile, multiRunId) : saveFile
             ))
-            .Where(File.Exists)
-            .Any();
+            .Any(File.Exists);
     }
 
     public static string? GetHistoryPath(int profileId, long startTime, string saveFile)

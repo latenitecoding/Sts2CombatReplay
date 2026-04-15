@@ -120,6 +120,14 @@ public partial class CombatReplayTracker
         // this is due to having to use prefix patches on async Tasks
         WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
     }
+
+    public void OnUpgradeCard(CardModel card)
+    {
+        if (!LocalContext.IsMe(card.Owner) || !_db.IsInCombat()) return;
+        WriteIt(card.Pile != null 
+            ? $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)} **in** `{card.Pile.Type.ToString()}` <\\"
+            : $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)} <\\");
+    }
     
     private string FormatCard(CardModel card)
     {

@@ -1,7 +1,5 @@
-using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -16,29 +14,12 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public override Task AfterPotionUsed(PotionModel potion, Creature? target)
+    public override Task BeforePotionUsed(PotionModel potion, Creature? target)
     {
-        var precededMsgType = potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is DamageVar)
-            ? ReplayLogger.MsgType.RpoHit
-            : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is BlockVar)
-                ? ReplayLogger.MsgType.BlockGained
-                : potion.DynamicVars.Values.Any(dynamicVar => dynamicVar is CardsVar)
-                    ? ReplayLogger.AllCardTypes()
-                    : ReplayLogger.MsgType.None;
         // unlike other events, this should be triggered for all players so that we can see what potions other players are using
-        if (precededMsgType is ReplayLogger.MsgType.None)
-        {
-            WriteIt(target != null
-                ? $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} **at** {FormatCreature(target)} === <\\"
-                : $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} === <\\");
-        }
-        else
-        {
-            WriteBefore(target != null
-                    ? $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} **at** {FormatCreature(target)} === <\\"
-                    : $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} === <\\",
-                precededMsgType);
-        }
+        WriteIt(target != null
+            ? $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} **at** {FormatCreature(target)} === <\\"
+            : $"> === {FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} === <\\");
 
         if (LocalContext.IsMe(potion.Owner)) _db.TotalPotionsUsed++;
         return Task.CompletedTask;

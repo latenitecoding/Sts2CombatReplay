@@ -39,6 +39,12 @@ public partial class CombatReplayTracker
             WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
         }
 
+        if (creature is not { Player: null })
+        {
+            var potions = string.Join(", ", creature.Player.Potions.Select(potion => $"`{potion.Title.GetFormattedText()}`"));
+            WriteIt($"> {designation}: {FormatCreature(creature)} **has** [{potions}] potions <\\");
+        }
+
         _db.OnAddCreature(creature, FormatCreature(creature));
         return Task.CompletedTask;
     }
