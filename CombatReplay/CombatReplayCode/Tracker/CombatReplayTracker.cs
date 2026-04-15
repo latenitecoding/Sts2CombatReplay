@@ -11,7 +11,7 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker : AbstractModel
 {
-    public static string DbFile = "sts2_combat_tracker_current.replay";
+    public static string DbFile = "sts2_combat_stats_current.json";
     public static string TrackerFile = "sts2_combat_tracker_current.replay";
     
     // Required by AbstractModel; used for hooking into ModHelper
