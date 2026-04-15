@@ -51,7 +51,9 @@ public partial class CombatReplayTracker
         
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\");
+            WriteBefore(
+                $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer: true })
         {
@@ -73,7 +75,9 @@ public partial class CombatReplayTracker
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **targeted** {FormatCreature(target)} <\\");
+            WriteBefore(
+                $"> `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **targeted** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.BlockBroken);
         }
         else
         {
@@ -123,7 +127,9 @@ public partial class CombatReplayTracker
 
         if (dealer != null && cardSource != null)
         {
-            WriteIt($"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target)} <\\");
+            WriteBefore(
+                $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer : true })
         {
@@ -143,7 +149,8 @@ public partial class CombatReplayTracker
         }
         else if (cardSource != null)
         {
-            WriteIt($"> `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **targeted** {FormatCreature(target)} <\\");
+            WriteBefore($"> `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **targeted** {FormatCreature(target)} <\\",
+                ReplayLogger.MsgType.BlockBroken);
         }
         else
         {
