@@ -27,21 +27,20 @@ public partial class CombatReplayTracker
                 $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
                 ReplayLogger.MsgType.CardAdded);
             _db.TotalCardsCreated++;
-        } else if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardCreated))
+        }
+        else if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardCreated))
         {
             // replace the card created output with this now that the pileType has been populated
-            BufferIt(
+            WriteIt(
                 $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
-                ReplayLogger.MsgType.CardEntered,
                 ReplayLogger.MsgType.CardCreated);
             _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
         }
         else if (ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardGiven))
         {
             // replace the card given output with this now that the pileType has been populated
-            BufferIt(
+            WriteIt(
                 $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
-                ReplayLogger.MsgType.CardEntered,
                 ReplayLogger.MsgType.CardGiven);
         }
         else

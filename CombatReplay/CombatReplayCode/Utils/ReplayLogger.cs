@@ -19,18 +19,17 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         CardAdded = 1 << 3,
         CardCreated = 1 << 4,
         CardDrawn = 1 << 5,
-        CardEntered = 1 << 6,
-        CardGiven = 1 << 7,
-        Defeated = 1 << 8,
-        OrbEvoked = 1 << 9,
-        PetWasHit = 1 << 10,
-        RpoHit = 1 << 11, // Relic-Power/Potion-Orb Hit
-        TookDamage = 1 << 12
+        CardGiven = 1 << 6,
+        Defeated = 1 << 7,
+        OrbEvoked = 1 << 8,
+        PetWasHit = 1 << 9,
+        RpoHit = 1 << 10, // Relic-Power/Potion-Orb Hit
+        TookDamage = 1 << 11
     }
 
     public static MsgType AllCardTypes()
     {
-        return MsgType.CardAdded | MsgType.CardCreated | MsgType.CardDrawn | MsgType.CardEntered | MsgType.CardGiven;
+        return MsgType.CardAdded | MsgType.CardCreated | MsgType.CardDrawn | MsgType.CardGiven;
     }
 
     public static bool Matches(MsgType? flags, MsgType flag)
