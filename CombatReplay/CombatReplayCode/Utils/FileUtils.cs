@@ -15,6 +15,7 @@ public static class FileUtils
                 "saves",
                 isMultiplayer ? AsMultiplayer(saveFile, multiRunId) : saveFile
             ))
+            .Where(File.Exists)
             .Any();
     }
 
