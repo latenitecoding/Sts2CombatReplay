@@ -118,7 +118,9 @@ public partial class CombatReplayTracker
         // the AfterCardEnteredCombat events have the finalized card data
         // this event only has the name of the card being transformed
         // this is due to having to use prefix patches on async Tasks
-        WriteIt($"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
+        WriteIt(original.Pile != null 
+            ? $"> {FormatPlayer(owner)} **transformed** `{original.Title}` **in** `{original.Pile.Type.ToString()}`<\\"
+            : $"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
     }
 
     public void OnUpgradeCard(CardModel card)
