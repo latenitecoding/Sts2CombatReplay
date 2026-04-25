@@ -67,12 +67,12 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public void OnAddGeneratedCard(Player owner, CardModel card, bool addedByPlayer)
+    public void OnAddGeneratedCard(Player owner, CardModel card, Player? creator)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         // created and given cards, like statuses, will trigger this, but their pileType won't be populated yet
         // these events are being buffered to be replaced later in the AfterCardEnteredCombat (always called)
-        if (addedByPlayer)
+        if (LocalContext.IsMe(creator))
         {
             BufferIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\", ReplayLogger.MsgType.CardCreated);
             return;

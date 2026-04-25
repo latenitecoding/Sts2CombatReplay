@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Patches;
@@ -16,13 +17,13 @@ public class CreateCardPatch
             {
                 typeof(CardModel),
                 typeof(PileType),
-                typeof(bool),
+                typeof(Player),
                 typeof(CardPilePosition)
             });
     }
 
-    static void Prefix(CardModel card, bool addedByPlayer)
+    static void Prefix(CardModel card, Player? creator)
     {
-        MainFile.Tracker.OnAddGeneratedCard(card.Owner, card, addedByPlayer);
+        MainFile.Tracker.OnAddGeneratedCard(card.Owner, card, creator);
     }
 }

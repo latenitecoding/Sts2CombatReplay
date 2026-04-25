@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Patches;
@@ -14,6 +15,7 @@ public class ModifyPowerAmountPatch
         return AccessTools.Method(typeof(PowerCmd), "ModifyAmount",
             new Type[]
             {
+                typeof(PlayerChoiceContext),
                 typeof(PowerModel),
                 typeof(Decimal),
                 typeof(Creature),

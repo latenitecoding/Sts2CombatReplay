@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Patches;
@@ -14,6 +15,7 @@ public class ApplyPowerPatch
         return AccessTools.Method(typeof(PowerCmd), "Apply",
             new Type[]
             {
+                typeof(PlayerChoiceContext),
                 typeof(PowerModel),
                 typeof(Creature),
                 typeof(Decimal),
@@ -22,6 +24,7 @@ public class ApplyPowerPatch
                 typeof(bool)
             });
     }
+
     static void Prefix(PowerModel power, Creature target, Decimal amount, Creature? applier, CardModel? cardSource)
     {
         MainFile.Tracker.OnApplyPower(power, target, amount, applier, cardSource);
