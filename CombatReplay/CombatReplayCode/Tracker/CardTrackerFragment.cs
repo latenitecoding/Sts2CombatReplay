@@ -149,8 +149,12 @@ public partial class CombatReplayTracker
         var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
 
-        return card.CurrentStarCost > 0 || card.HasStarCostX
-            ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
-            : $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
+        var isUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable);
+
+        return isUnplayable
+            ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **unplayable**"
+            : card.CurrentStarCost > 0 || card.HasStarCostX
+                ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
+                : $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
     }
 }

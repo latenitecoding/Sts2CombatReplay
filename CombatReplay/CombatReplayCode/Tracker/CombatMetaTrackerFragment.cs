@@ -115,6 +115,7 @@ public partial class CombatReplayTracker
                 WriteIt("=== Player phase **ended** ===\\");
                 break;
             case CombatSide.Enemy:
+                WriteIt("=== Enemy phase **ended** ===\\");
                 WriteIt($"=== Turn: {_db.CurrentTurn} **ended** ===\\");
                 break;
             case CombatSide.None:
@@ -134,6 +135,10 @@ public partial class CombatReplayTracker
 
     public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, ICombatState combatState)
     {
+        if (side == CombatSide.Enemy)
+        {
+            WriteIt("=== Enemy phase **started** ===\\");
+        }
         if (side != CombatSide.Player) return Task.CompletedTask;
         
         _db.OnNextTurn();
