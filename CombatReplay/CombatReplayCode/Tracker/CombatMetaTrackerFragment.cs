@@ -74,7 +74,7 @@ public partial class CombatReplayTracker
                 continue;
             }
             
-            var powers = string.Join(", ", creature.Powers.Select(power => $"`{power.Title.GetFormattedText()} {power.Amount}`"));
+            var powers = string.Join(", ", creature.Powers.Select(power => $"{FormatPower(power)}"));
             WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers <\\");
             
             if (creature is { IsPlayer: true } and not { Player : null } and not { Player.PlayerCombatState: null } &&

@@ -22,8 +22,9 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         Defeated = 1 << 6,
         OrbEvoked = 1 << 7,
         PetWasHit = 1 << 8,
-        RpoHit = 1 << 9, // Relic-Power/Potion-Orb Hit
-        TookDamage = 1 << 10
+        PowerCleared = 1 << 9,
+        RpoHit = 1 << 10, // Relic-Power/Potion-Orb Hit
+        TookDamage = 1 << 11
     }
 
     public static MsgType AllCardTypes()

@@ -9,7 +9,7 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
 
-public partial class CombatReplayTracker(string version) : AbstractModel
+public partial class CombatReplayTracker : AbstractModel
 {
     public static string DbFile = "sts2_combat_stats_current.json";
     public static string TrackerFile = "sts2_combat_tracker_current.replay";
@@ -117,7 +117,7 @@ public partial class CombatReplayTracker(string version) : AbstractModel
         
         if (_runSeed != null) WriteIt($"=== Run **seeded** `{_runSeed}` ===\\");
         
-        WriteIt($"=== Mod version: `{version}` ===\\");
+        WriteIt($"=== Mod version: `{MainFile.Version}` ===\\");
     }
 
     public void OnRunEnd(long startTime)

@@ -13,11 +13,12 @@ using Tracker;
 public partial class MainFile : Node
 {
     private const string ModId = "CombatReplay"; //At the moment, this is used only for the Logger and harmony names.
+    public const string Version = "v1.2.1";
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
 
-    public static readonly CombatReplayTracker Tracker = new("v1.2.0");
+    public static readonly CombatReplayTracker Tracker = new();
     
     private static void OnRunStarted(RunState state) => Tracker.OnRunStart();
     private static void OnActEntered() => Tracker.OnActEntered();

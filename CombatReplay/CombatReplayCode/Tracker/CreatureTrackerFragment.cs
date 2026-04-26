@@ -13,7 +13,11 @@ public partial class CombatReplayTracker
     public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
         float deathAnimLength)
     {
-        BufferIt($"> {FormatCreature(creature)} **defeated** <\\", ReplayLogger.MsgType.Defeated, autoFlush: false);
+        BufferBefore(
+            $"> {FormatCreature(creature)} **defeated** <\\",
+            ReplayLogger.MsgType.Defeated,
+            ReplayLogger.MsgType.PowerCleared,
+            autoFlush: false);
         return Task.CompletedTask; 
     }
 
