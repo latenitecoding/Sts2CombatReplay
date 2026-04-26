@@ -1,6 +1,7 @@
 using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -79,6 +80,16 @@ public partial class CombatReplayTracker
         }
         BufferIt($"> {FormatPlayer(owner)} **gained** `{card.Title}` <\\", ReplayLogger.MsgType.CardGiven);
     }
+    
+    public void OnAutoPlay(CardModel card, Creature? target)
+    {
+        var dealer = card.Owner.Creature;
+        WriteIt(target != null
+            ? $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} === <\\"
+            : $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` === <\\");
+        if (!LocalContext.IsMe(card.Owner)) return;
+        _db.OnExecuteCard(card.Title);
+    }
 
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)
     {
@@ -110,7 +121,7 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }
-
+   
     public void OnTransformCard(Player owner, CardModel original)
     {
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
