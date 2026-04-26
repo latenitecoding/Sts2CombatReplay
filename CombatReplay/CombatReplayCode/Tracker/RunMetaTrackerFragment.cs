@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -9,6 +10,9 @@ public partial class CombatReplayTracker
         // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
         WriteIt($"### Act {_db.CurrentAct} **started** ###");
+
+        _runSeed ??= _db.RunSeed;
+        _db.RunSeed ??= _runSeed;
         
         // this is called here to ensure that the first room is called after the act is started
         OnRoomEntered();
