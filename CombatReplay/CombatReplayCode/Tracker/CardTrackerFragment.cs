@@ -144,7 +144,7 @@ public partial class CombatReplayTracker
         var affliction = (card.Affliction != null) ? $"`{card.Affliction.Title.GetFormattedText()}`" : "";
 
         var replayCount = card.GetEnchantedReplayCount();
-        var replayEntry = (replayCount > 0) ? $"[Replay: `{replayCount}`]" : "";
+        var replayEntry = (replayCount > 0) ? $"`Replay: x{replayCount}`" : "-";
         
         var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
