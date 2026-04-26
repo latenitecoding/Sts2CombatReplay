@@ -84,9 +84,18 @@ public partial class CombatReplayTracker
     public void OnAutoPlay(CardModel card, Creature? target)
     {
         var dealer = card.Owner.Creature;
-        WriteIt(target != null
-            ? $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} === <\\"
-            : $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` === <\\");
+        if (LocalContext.IsMe(dealer) || (dealer is { IsPet : true} && LocalContext.IsMe(dealer.PetOwner)))
+        {
+            WriteIt(target != null
+                ? $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} === <\\"
+                : $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` === <\\");
+        }
+        else
+        {
+            WriteIt(target != null
+                ? $"> --- `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} --- <\\"
+                : $"> --- `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` --- <\\");
+        }
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }
@@ -115,9 +124,18 @@ public partial class CombatReplayTracker
     {
         // unlike other events, this should be triggered for all players so that we can see what cards other players are playing
         var card = action.NetCombatCard.ToCardModel();
-        WriteIt(action.Target != null
-            ? $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} === <\\"
-            : $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` === <\\");
+        if (LocalContext.IsMe(card.Owner))
+        {
+            WriteIt(action.Target != null
+                ? $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} === <\\"
+                : $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` === <\\");
+        }
+        else
+        {
+            WriteIt(action.Target != null
+                ? $"> --- {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} --- <\\"
+                : $"> --- {FormatPlayer(action.Player)} **played** `{card.Title}` --- <\\");
+        }
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
     }

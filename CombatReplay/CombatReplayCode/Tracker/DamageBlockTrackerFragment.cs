@@ -51,8 +51,11 @@ public partial class CombatReplayTracker
         
         if (dealer != null && cardSource != null)
         {
+            
             WriteBefore(
-                $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\",
+                dealer == target
+                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\"
+                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer: true })
@@ -129,7 +132,9 @@ public partial class CombatReplayTracker
         if (dealer != null && cardSource != null)
         {
             WriteBefore(
-                $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target, isDefeated: true)} <\\",
+                dealer == target
+                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\"
+                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target, isDefeated: true)} <\\",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer : true })
