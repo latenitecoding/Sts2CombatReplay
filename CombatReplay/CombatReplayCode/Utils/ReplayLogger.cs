@@ -41,21 +41,21 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     
     private record BufferedMsg(string Msg, MsgType MsgType);
 
-    public void BufferBefore(string msg, MsgType msgType, MsgType preceded, bool autoFlush = true)
+    public (bool ok, bool found) BufferBefore(string msg, MsgType msgType, MsgType preceded, bool autoFlush = true)
     {
         lock (_writerLock)
         {
             if (_bufferStack.Count == 0)
             {
                 _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-                return;
+                return (true, false);
             }
 
             for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
             {
                 if (!Matches(cur.Value.MsgType, preceded)) continue;
                 _bufferStack.AddBefore(cur, new BufferedMsg(msg, msgType));
-                return;
+                return (true, true);
             }
         }
         
@@ -65,9 +65,11 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         {
             _bufferStack.AddLast(new BufferedMsg(msg, msgType));
         }
+
+        return (true, false);
     }
 
-    public void BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None, bool autoFlush = true)
+    public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None, bool autoFlush = true)
     {
         lock (_writerLock)
         {
@@ -77,7 +79,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 {
                     if (!Matches(cur.Value.MsgType, overwrite)) continue;
                     cur.Value = new BufferedMsg(msg, msgType);
-                    return;
+                    return (true, true);
                 }
             }
         }
@@ -89,6 +91,8 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         {
             _bufferStack.AddLast(new BufferedMsg(msg, msgType));
         }
+
+        return (true, false);
     }
 
     public void Flush()
@@ -146,9 +150,9 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     public MsgType PeekBufferType() => _bufferStack.Count > 0 ? _bufferStack.Last().MsgType : MsgType.None;
 
-    public void WriteBefore(string msg, MsgType preceded)
+    public (bool ok, bool found) WriteBefore(string msg, MsgType preceded)
     {
-        if (_savePath == null || _writer == null) return;
+        if (_savePath == null || _writer == null) return (false, false);
         lock (_writerLock)
         {
             while (_bufferStack.Count > 0 && !Matches(_bufferStack.First().MsgType, preceded))
@@ -157,25 +161,33 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 _bufferStack.RemoveFirst();
             }
 
+            var found = _bufferStack.Count > 0;
+
             _writer.WriteLine(msg);
             _writer.Flush();
+
+            return (true, found);
         }
     }
     
-    public void WriteIt(string msg, MsgType overwrite = MsgType.None)
+    public (bool ok, bool found) WriteIt(string msg, MsgType overwrite = MsgType.None)
     {
-        if (_savePath == null || _writer == null) return;
+        if (_savePath == null || _writer == null) return (false, false);
         if (overwrite != MsgType.None)
         {
-            BufferIt(msg, MsgType.None, overwrite, autoFlush: false);
+            var (ok, found) = BufferIt(msg, MsgType.None, overwrite, autoFlush: false);
             Flush();
-            return;
+            return (ok, found);
         }
+        
         Flush();
+        
         lock (_writerLock)
         {
             _writer.WriteLine(msg);
             _writer.Flush();
         }
+
+        return (true, false);
     }
 }

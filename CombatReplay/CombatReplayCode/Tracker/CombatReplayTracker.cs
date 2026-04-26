@@ -137,23 +137,23 @@ public partial class CombatReplayTracker : AbstractModel
         _db.RunSeed = seed;
     }
     
-    private void BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded, bool autoFlush = true)
+    private (bool ok, bool found) BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded, bool autoFlush = true)
     {
-        _logger?.BufferBefore(msg, msgType, preceded, autoFlush);
+        return _logger?.BufferBefore(msg, msgType, preceded, autoFlush) ?? (false, false);
     }
 
-    private void BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
+    private (bool ok, bool found) BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
     {
-        _logger?.BufferIt(msg, msgType, overwrite, autoFlush);
+        return _logger?.BufferIt(msg, msgType, overwrite, autoFlush) ?? (false, false);
     }
 
-    private void WriteBefore(string msg, ReplayLogger.MsgType preceded)
+    private (bool ok, bool found) WriteBefore(string msg, ReplayLogger.MsgType preceded)
     {
-        _logger?.WriteBefore(msg, preceded);
+        return _logger?.WriteBefore(msg, preceded) ?? (false, false);
     }
 
-    private void WriteIt(string msg, ReplayLogger.MsgType overwrite =  ReplayLogger.MsgType.None)
+    private (bool ok, bool found) WriteIt(string msg, ReplayLogger.MsgType overwrite =  ReplayLogger.MsgType.None)
     {
-        _logger?.WriteIt(msg, overwrite);
+        return _logger?.WriteIt(msg, overwrite) ?? (false, false);
     }
 }

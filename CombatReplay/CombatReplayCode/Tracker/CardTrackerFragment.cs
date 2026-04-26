@@ -13,7 +13,7 @@ public partial class CombatReplayTracker
     private readonly Dictionary<string, string> _specialDynamicVars = new()
     {
         ["Uppercut"] = "`Damage 13`, `Weak 1`, `Vulnerable 1`",
-        ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`",
+        ["Uppercut+"] = "`Damage 13`, `Weak 2`, `Vulnerable 2`"
     };
 
     public override Task AfterCardEnteredCombat(CardModel card)
@@ -138,13 +138,21 @@ public partial class CombatReplayTracker
 
         var dynamicVars = (_specialDynamicVars.TryGetValue(card.Title, out var value))
             ? value
-            : string.Join(", ", card.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
+            : string.Join(", ", card.DynamicVars.Values.Select(dynamicVar =>
+            {
+                var dynamicVarName = dynamicVar.Name.Replace("Power", "");
+                if (string.IsNullOrEmpty(dynamicVarName) && card.Title.IndexOf('+') is var plusIdx)
+                {
+                    dynamicVarName = plusIdx >= 0 ? card.Title[..plusIdx] : card.Title;
+                }
+                return $"`{dynamicVarName} {(int)dynamicVar.EnchantedValue}`";
+            }));
         
         var enchantment = (card.Enchantment != null) ? $"`{card.Enchantment.Title.GetFormattedText()}`" : "";
         var affliction = (card.Affliction != null) ? $"`{card.Affliction.Title.GetFormattedText()}`" : "";
 
         var replayCount = card.GetEnchantedReplayCount();
-        var replayEntry = (replayCount > 0) ? $"`Replay: x{replayCount}`" : "-";
+        var replayEntry = (replayCount > 0) ? $"`Replay {replayCount}`" : "";
         
         var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
@@ -152,9 +160,9 @@ public partial class CombatReplayTracker
         var isUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable);
 
         return isUnplayable
-            ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **unplayable**"
+            ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] [{replayEntry}] **unplayable**"
             : card.CurrentStarCost > 0 || card.HasStarCostX
-                ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy **and** `{starCost}` stars"
-                : $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] {replayEntry} **costing** `{energyCost}` energy";
+                ? $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] [{replayEntry}] **costing** `{energyCost}` energy **and** `{starCost}` stars"
+                : $"`{card.Title}` [{dynamicVars}] [{tags}] [{keywords}] [{enchantment}] [{affliction}] [{replayEntry}] **costing** `{energyCost}` energy";
     }
 }

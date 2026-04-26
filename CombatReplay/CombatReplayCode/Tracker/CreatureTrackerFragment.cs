@@ -80,12 +80,13 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}] <\\");
     }
    
-    private static string FormatCreature(Creature creature)
+    private static string FormatCreature(Creature creature, bool isDefeated = false)
     {
-        var shownHp = (creature.ShowsInfiniteHp) ? "Inf/Inf" : $"{creature.CurrentHp}/{creature.MaxHp}";
+        var shownHp = (creature.ShowsInfiniteHp) ? "Inf/Inf" : $"{(isDefeated ? 0 : creature.CurrentHp)}/{creature.MaxHp}";
+        var creatureName = creature.Name.Replace("#", "\\#");
         return (creature.CombatId != null)
-            ? $"`{creature.Name}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
-            : $"`{creature.Name}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
+            ? $"`{creatureName}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
+            : $"`{creatureName}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
     }
     
     private static string FormatPlayer(Player player)
