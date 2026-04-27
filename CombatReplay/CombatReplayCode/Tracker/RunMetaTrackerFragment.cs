@@ -9,6 +9,7 @@ public partial class CombatReplayTracker
     {
         // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
+        if (_db.CurrentAct > 1) OnRoomExited();
         WriteIt($"### Act {_db.CurrentAct} **started** ###");
 
         _runSeed ??= _db.RunSeed;

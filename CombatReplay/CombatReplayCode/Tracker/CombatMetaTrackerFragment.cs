@@ -64,7 +64,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         
-        WriteIt("=== Player phase **started** ===\\");
+        WriteIt("=== Player Phase **started** ===\\");
         
         foreach (var creature in _db.GetCombatCreatureList())
         {

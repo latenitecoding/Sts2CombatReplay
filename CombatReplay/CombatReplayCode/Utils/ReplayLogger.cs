@@ -71,9 +71,9 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
 
     public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None, bool autoFlush = true)
     {
-        lock (_writerLock)
+        if (overwrite != MsgType.None)
         {
-            if (overwrite != MsgType.None)
+            lock (_writerLock)
             {
                 for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
                 {

@@ -73,6 +73,9 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         // created and given cards, like statuses, will trigger this, but their pileType won't be populated yet
         // these events are being buffered to be replaced later in the AfterCardEnteredCombat (always called)
+        // some creation events will redundantly trigger this hook so guards are also necessary
+        if (ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardCreated)) return;
+        if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardGiven)) return;
         if (LocalContext.IsMe(creator))
         {
             BufferIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\", ReplayLogger.MsgType.CardCreated);
