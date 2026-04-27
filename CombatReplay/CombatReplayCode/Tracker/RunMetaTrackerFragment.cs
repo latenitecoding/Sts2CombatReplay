@@ -21,14 +21,14 @@ public partial class CombatReplayTracker
     public void OnRoomEntered()
     {
         _db.NextRoom();
-        WriteIt($"##### Room: {_db.CurrentRoom} **entered** #####");
+        WriteIt($"##### Room {_db.CurrentRoom} **entered** #####");
     }
 
     public void OnRoomExited()
     {
         // sometimes the OnActEntered isn't called in Neow's room
         if (_db.CurrentAct == 0) OnActEntered();
-        WriteIt($"=== Room: {_db.CurrentRoom} **exited** ===\\");
+        WriteIt($"=== Room {_db.CurrentRoom} **exited** ===\\");
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
         _db.InProgressSave();

@@ -19,7 +19,7 @@ public partial class CombatReplayTracker
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        WriteIt($"=== Combat: {_db.CurrentCombat} **ended** ===\\");
+        WriteIt($"=== Combat {_db.CurrentCombat} **ended** ===\\");
         _db.OnEndCombat();
     
         MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
@@ -48,7 +48,7 @@ public partial class CombatReplayTracker
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        WriteIt($"=== Combat: {_db.CurrentCombat} **was** `victory` ===\\");
+        WriteIt($"=== Combat {_db.CurrentCombat} **was** `victory` ===\\");
         return Task.CompletedTask;
     }
     
@@ -112,11 +112,11 @@ public partial class CombatReplayTracker
         switch (side)
         {
             case CombatSide.Player:
-                WriteIt("=== Player phase **ended** ===\\");
+                WriteIt("=== Player Phase **ended** ===\\");
                 break;
             case CombatSide.Enemy:
-                WriteIt("=== Enemy phase **ended** ===\\");
-                WriteIt($"=== Turn: {_db.CurrentTurn} **ended** ===\\");
+                WriteIt("=== Enemy Phase **ended** ===\\");
+                WriteIt($"=== Turn {_db.CurrentTurn} **ended** ===\\");
                 break;
             case CombatSide.None:
             default:
@@ -128,7 +128,7 @@ public partial class CombatReplayTracker
     public override Task BeforeCombatStart()
     {
         _db.OnStartCombat();
-        WriteIt($"=== Combat: {_db.CurrentCombat} **started** ===");
+        WriteIt($"=== Combat {_db.CurrentCombat} **started** ===\\");
         
         return Task.CompletedTask;
     }
@@ -137,12 +137,12 @@ public partial class CombatReplayTracker
     {
         if (side == CombatSide.Enemy)
         {
-            WriteIt("=== Enemy phase **started** ===\\");
+            WriteIt("=== Enemy Phase **started** ===\\");
         }
         if (side != CombatSide.Player) return Task.CompletedTask;
         
         _db.OnNextTurn();
-        WriteIt($"=== Turn: {_db.CurrentTurn} **started** ===");
+        WriteIt($"=== Turn {_db.CurrentTurn} **started** ===\\");
         
         return Task.CompletedTask;
     }

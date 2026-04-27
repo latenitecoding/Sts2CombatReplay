@@ -115,9 +115,9 @@ public partial class CombatReplayTracker : AbstractModel
         WriteIt($"=== Ascension Level: `{ascensionLevel}` ===\\");
         _db.AscensionLevel = ascensionLevel.ToString();
         
-        if (_runSeed != null) WriteIt($"=== Run **seeded** `{_runSeed}` ===\\");
+        if (_runSeed != null) WriteIt($"=== Run Seed: `{_runSeed}` ===\\");
         
-        WriteIt($"=== Mod version: `{MainFile.Version}` ===\\");
+        WriteIt($"=== Mod Version: `{MainFile.Version}` ===\\");
     }
 
     public void OnRunEnd(long startTime)
