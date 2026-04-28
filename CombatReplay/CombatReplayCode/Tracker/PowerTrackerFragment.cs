@@ -32,6 +32,7 @@ public partial class CombatReplayTracker
 
     private bool IsNonStackablePower(PowerModel power, Creature? target, int amount)
     {
+        if (power is StrengthPower) return false;
         return power.StackType is not PowerStackType.Counter || (amount < 0 && target != null && !target.HasPower(power.Id));
     }
 }
