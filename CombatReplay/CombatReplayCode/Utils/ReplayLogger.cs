@@ -134,7 +134,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             _writer = null;
         }
         
-        var finalPath = FileUtils.GetHistoryPath(profileId, startTime, saveFile.Replace("current_", ""));
+        var finalPath = FileUtils.GetHistoryPath(profileId, startTime, saveFile.Replace("_current", ""));
         if (finalPath == null || !File.Exists(_savePath)) return;
         
         File.Move(_savePath, finalPath, overwrite: true);
