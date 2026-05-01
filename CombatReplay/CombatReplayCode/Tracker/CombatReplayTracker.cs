@@ -122,7 +122,9 @@ public partial class CombatReplayTracker : AbstractModel
 
     public void OnRunEnd(long startTime)
     {
-        WriteIt($"=== Run **ended** ===\\");
+        var (ok, found) = BufferIt($"=== Run **ended** ===\\", ReplayLogger.MsgType.RoomEntered);
+        if (found) _db.CurrentRoom--;
+        
         MainFile.Logger.Info("CombatReplay tracking stopped");
         MainFile.Logger.Info("Saving Run...");
         
@@ -145,6 +147,16 @@ public partial class CombatReplayTracker : AbstractModel
     private (bool ok, bool found) BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
     {
         return _logger?.BufferIt(msg, msgType, overwrite, autoFlush) ?? (false, false);
+    }
+
+    private bool CheckIt(ReplayLogger.MsgType msgType)
+    {
+        return _logger?.CheckIt(msgType) ?? false;
+    }
+
+    private void Flush()
+    {
+        _logger?.Flush();
     }
 
     private (bool ok, bool found) WriteBefore(string msg, ReplayLogger.MsgType preceded)

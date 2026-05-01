@@ -49,7 +49,7 @@ public partial class CombatReplayDb
         
         File.WriteAllText(_savePath, JsonSerializer.Serialize(this, JsonOptions));
 
-        var finalPath = FileUtils.GetHistoryPath(_profileId.Value, startTime, _saveFile);
+        var finalPath = FileUtils.GetHistoryPath(_profileId.Value, startTime, _saveFile.Replace("current_", ""));
         if (finalPath == null) return;
         
         File.Move(_savePath, finalPath, overwrite: true);

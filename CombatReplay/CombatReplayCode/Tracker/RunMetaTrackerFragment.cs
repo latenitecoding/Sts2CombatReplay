@@ -1,3 +1,4 @@
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -9,26 +10,34 @@ public partial class CombatReplayTracker
     {
         // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
-        if (_db.CurrentAct > 1) OnRoomExited();
-        WriteIt($"### Act {_db.CurrentAct} **started** ###");
+        var (ok, found) = BufferIt(
+            $"### Act {_db.CurrentAct} **started** ###",
+            ReplayLogger.MsgType.ActStarted,
+            ReplayLogger.MsgType.RoomEntered);
+        if (found) _db.CurrentRoom--;
 
         _runSeed ??= _db.RunSeed;
         _db.RunSeed ??= _runSeed;
-        
-        // this is called here to ensure that the first room is called after the act is started
-        OnRoomEntered();
     }
 
     public void OnRoomEntered()
     {
+        if (_db.CurrentAct == 0) OnActEntered();
+        
         _db.NextRoom();
-        WriteIt($"##### Room {_db.CurrentRoom} **entered** #####");
+        BufferIt($"##### Room {_db.CurrentRoom} **entered** #####", ReplayLogger.MsgType.RoomEntered);
     }
 
     public void OnRoomExited()
     {
         // sometimes the OnActEntered isn't called in Neow's room
-        if (_db.CurrentAct == 0) OnActEntered();
+        if (_db.CurrentAct == 0) OnRoomEntered();
+        if (CheckIt(ReplayLogger.MsgType.ActStarted))
+        {
+            Flush();
+            return;
+        }
+        
         WriteIt($"=== Room {_db.CurrentRoom} **exited** ===\\");
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
