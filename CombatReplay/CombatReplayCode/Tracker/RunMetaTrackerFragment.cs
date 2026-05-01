@@ -1,6 +1,4 @@
 using CombatReplay.CombatReplayCode.Utils;
-using MegaCrit.Sts2.Core.Nodes.Vfx;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
 
@@ -14,7 +12,10 @@ public partial class CombatReplayTracker
             $"### Act {_db.CurrentAct} **started** ###",
             ReplayLogger.MsgType.ActStarted,
             ReplayLogger.MsgType.RoomEntered);
-        BufferIt($"##### Room {_db.CurrentRoom} **entered** #####", ReplayLogger.MsgType.ActStarted);
+        if (_db.CurrentRoom > 0)
+        {
+            BufferIt($"##### Room {_db.CurrentRoom} **entered** #####", ReplayLogger.MsgType.ActStarted);
+        }
 
         _runSeed ??= _db.RunSeed;
         _db.RunSeed ??= _runSeed;
