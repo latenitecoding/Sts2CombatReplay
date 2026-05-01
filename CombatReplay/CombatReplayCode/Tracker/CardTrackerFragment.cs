@@ -43,12 +43,14 @@ public partial class CombatReplayTracker
             WriteIt(
                 $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
                 ReplayLogger.MsgType.CardGiven);
+            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
         }
         else
         {
             // covers all other cases for how cards can enter into combat, such as transform
             WriteIt(
                 $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\");
+            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
         }
         return Task.CompletedTask;
     }
@@ -153,6 +155,7 @@ public partial class CombatReplayTracker
         WriteIt(original.Pile != null 
             ? $"> {FormatPlayer(owner)} **transformed** `{original.Title}` **in** `{original.Pile.Type.ToString()}`<\\"
             : $"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
+        _db.TotalCardsCreated++;
     }
 
     public void OnUpgradeCard(CardModel card)
