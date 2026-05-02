@@ -64,6 +64,11 @@ public partial class CombatReplayTracker
         _db.TotalHpHealed += trueAmount;
     }
 
+    public void OnCreatureStunned(Creature creature)
+    {
+        WriteIt($"> {FormatCreature(creature)} **stunned**");
+    }
+
     public void OnRollMove(Creature owner, MoveState state)
     {
         // this action is called twice when entering a room with combat; this filters out the first
