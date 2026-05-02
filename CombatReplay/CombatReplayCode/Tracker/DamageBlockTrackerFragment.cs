@@ -14,7 +14,7 @@ public partial class CombatReplayTracker
     {
         // the necrobinder block broken event is triggered after osty takes damage even though it occurs first in game
         BufferBefore(
-            $"> {FormatCreature(creature)} **broken** <\\", ReplayLogger.MsgType.BlockBroken, 
+            $"> {FormatCreature(creature)} **broken**", ReplayLogger.MsgType.BlockBroken, 
             ReplayLogger.MsgType.PetWasHit);
         return Task.CompletedTask;
     }
@@ -22,8 +22,8 @@ public partial class CombatReplayTracker
     public override Task AfterBlockGained(Creature creature, Decimal amount, ValueProp props, CardModel? cardSource)
     {
         WriteBefore(cardSource != null
-            ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {(int)amount}`] <\\"
-            : $"> {FormatCreature(creature)} **gained** [`Block {(int)amount}`] <\\",
+            ? $"> {FormatCreature(creature)} **used** `{cardSource.Title}` [`Block {(int)amount}`]"
+            : $"> {FormatCreature(creature)} **gained** [`Block {(int)amount}`]",
             ReplayLogger.MsgType.TookDamage);
 
         if (!LocalContext.IsMe(creature.Player)) return Task.CompletedTask;
@@ -43,7 +43,7 @@ public partial class CombatReplayTracker
             // current order is osty damage -> necro block broken -> necro damage (remaining)
             // order should be necro damage -> necro block broken -> osty damage -> necro damage (remaining)
             BufferIt(
-                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)}",
                 ReplayLogger.MsgType.PetWasHit);
             _db.OnCombatDamageDealt(dealer, target, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
             return Task.CompletedTask;
@@ -54,8 +54,8 @@ public partial class CombatReplayTracker
             
             WriteBefore(
                 dealer == target
-                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\"
-                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)} <\\",
+                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`]"
+                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer: true })
@@ -65,7 +65,7 @@ public partial class CombatReplayTracker
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
             var (ok, found) = BufferIt(
-                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)}",
                 ReplayLogger.MsgType.RpoHit,
                 ReplayLogger.MsgType.BeforeDamage);
             if (ok && found) return Task.CompletedTask; // damage event already logged; this prevents double counting
@@ -74,20 +74,20 @@ public partial class CombatReplayTracker
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
-                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (cardSource != null)
         {
             WriteBefore(
-                $"> `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **targeted** {FormatCreature(target)} <\\",
+                $"> `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **targeted** {FormatCreature(target)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             BufferBefore(
-                $"> {FormatCreature(target)} **took** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] <\\", 
+                $"> {FormatCreature(target)} **took** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`]", 
                 ReplayLogger.MsgType.TookDamage,
                 ReplayLogger.MsgType.BlockBroken);
         }
@@ -123,7 +123,7 @@ public partial class CombatReplayTracker
             // current order is osty damage -> necro block broken -> necro damage (remaining)
             // order should be necro damage -> necro block broken -> osty damage -> necro damage (remaining)
             BufferIt(
-                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)}",
                     ReplayLogger.MsgType.PetWasHit);
             _db.OnCombatDamageDealt(dealer, target, cardSource, (int) amount, target.CurrentHp, target.Block);
             return Task.CompletedTask;
@@ -133,8 +133,8 @@ public partial class CombatReplayTracker
         {
             WriteBefore(
                 dealer == target
-                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\"
-                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target, isDefeated: true)} <\\",
+                    ? $"> {FormatCreature(dealer)} **suffered** [`Damage {target.Block}|{(int) amount - target.Block}`]"
+                    : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **against** {FormatCreature(target, isDefeated: true)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (dealer is { IsPlayer : true })
@@ -142,7 +142,7 @@ public partial class CombatReplayTracker
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             // this must also be buffered since damage from orbs are logged before evoke even though evoke occurs first
             BufferBefore(
-                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)}",
                 ReplayLogger.MsgType.BeforeDamage | ReplayLogger.MsgType.RpoHit,
                 ReplayLogger.MsgType.BlockBroken);
         }
@@ -150,19 +150,19 @@ public partial class CombatReplayTracker
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             WriteBefore(
-                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)} <\\",
+                $"> {FormatCreature(dealer)} [`Damage {target.Block}|{(int) amount - target.Block}`] **hit** {FormatCreature(target, isDefeated: true)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else if (cardSource != null)
         {
-            WriteBefore($"> `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **targeted** {FormatCreature(target, isDefeated: true)} <\\",
+            WriteBefore($"> `{cardSource.Title}` [`Damage {target.Block}|{(int) amount - target.Block}`] **targeted** {FormatCreature(target, isDefeated: true)}",
                 ReplayLogger.MsgType.BlockBroken);
         }
         else
         {
             // damage dealt logs block broken on creatures before damage even though it should be damage and then block broken
             BufferBefore(
-                $"> {FormatCreature(target, isDefeated: true)} **took** [`Damage {target.Block}|{(int) amount - target.Block}`] <\\",
+                $"> {FormatCreature(target, isDefeated: true)} **took** [`Damage {target.Block}|{(int) amount - target.Block}`]",
                 ReplayLogger.MsgType.TookDamage,
                 ReplayLogger.MsgType.BlockBroken);
         }

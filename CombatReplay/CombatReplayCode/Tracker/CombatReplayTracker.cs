@@ -105,24 +105,24 @@ public partial class CombatReplayTracker : AbstractModel
 
         if ((isMultiplayer && multiplayerInProgress) || (!isMultiplayer && saveManager.HasRunSave)) return;
         
-        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId} #");
+        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId} #\n");
 
         var ascensionLevel = AscensionLevel.None;
         foreach (var ascension in Enum.GetValues<AscensionLevel>())
         {
             if (RunManager.Instance.AscensionManager.HasLevel(ascension)) ascensionLevel = ascension;
         }
-        WriteIt($"=== Ascension Level: `{ascensionLevel}` ===\\");
+        WriteIt($"- Ascension Level: `{ascensionLevel}`");
         _db.AscensionLevel = ascensionLevel.ToString();
         
-        if (_runSeed != null) WriteIt($"=== Run Seed: `{_runSeed}` ===\\");
+        if (_runSeed != null) WriteIt($"- Run Seed: `{_runSeed}`");
         
-        WriteIt($"=== Mod Version: `{MainFile.Version}` ===\\");
+        WriteIt($"- Mod Version: `{MainFile.Version}`");
     }
 
     public void OnRunEnd(long startTime)
     {
-        var (ok, found) = BufferIt($"=== Run **ended** ===\\", ReplayLogger.MsgType.RoomEntered);
+        var (ok, found) = BufferIt($"==Run **ended**==", ReplayLogger.MsgType.RoomEntered);
         if (found) _db.CurrentRoom--;
         
         MainFile.Logger.Info("CombatReplay tracking stopped");

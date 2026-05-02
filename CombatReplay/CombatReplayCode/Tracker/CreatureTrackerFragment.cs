@@ -14,7 +14,7 @@ public partial class CombatReplayTracker
         float deathAnimLength)
     {
         BufferBefore(
-            $"> {FormatCreature(creature)} **defeated** <\\",
+            $"> {FormatCreature(creature)} **defeated**",
             ReplayLogger.MsgType.Defeated,
             ReplayLogger.MsgType.PowerCleared,
             autoFlush: false);
@@ -32,21 +32,21 @@ public partial class CombatReplayTracker
                     : "Other"));
         if (LocalContext.IsMe(creature))
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <--- THIS IS ME <\\");
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <!-- THIS IS ME -->");
         }
         else if (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner))
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <--- THIS IS MY PET <\\");
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <!-- THIS IS MY PET -->");
         }
         else
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <\\");
+            WriteIt($"> {designation}: {FormatCreature(creature)} **present**");
         }
 
         if (creature is not { Player: null })
         {
             var potions = string.Join(", ", creature.Player.Potions.Select(potion => $"`{potion.Title.GetFormattedText()}`"));
-            WriteIt($"> {designation}: {FormatCreature(creature)} **has** [{potions}] potions <\\");
+            WriteIt($"> {designation}: {FormatCreature(creature)} **has** [{potions}] potions");
         }
 
         _db.OnAddCreature(creature, FormatCreature(creature));
@@ -59,7 +59,7 @@ public partial class CombatReplayTracker
         // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
         if (_db.CurrentRoom <= 1) return;
         var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
-        WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP <\\");
+        WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP");
         if (!LocalContext.IsMe(creature)) return;
         _db.TotalHpHealed += trueAmount;
     }
@@ -77,7 +77,7 @@ public partial class CombatReplayTracker
                     ? $"`{intention.IntentType.ToString()} {(int) dmg}x{attackIntention.Repeats}`"
                     : $"`{intention.IntentType.ToString()} {(int) dmg}`";
             }));
-        WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}] <\\");
+        WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}]");
     }
    
     private static string FormatCreature(Creature creature, bool isDefeated = false)

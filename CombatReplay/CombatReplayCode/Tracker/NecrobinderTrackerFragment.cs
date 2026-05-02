@@ -11,12 +11,12 @@ public partial class CombatReplayTracker
     {
         if (osty is { IsPet: true } && LocalContext.IsMe(osty.PetOwner)) 
         {
-            WriteIt($"> My {FormatCreature(osty)} **revived** <\\");
+            WriteIt($"> My {FormatCreature(osty)} **revived**");
             _db.TotalOstyRevives += 1;
         }
         else
         {
-            WriteIt($"> Another {FormatCreature(osty)} **revived** <\\");
+            WriteIt($"> Another {FormatCreature(osty)} **revived**");
         }
         return Task.CompletedTask;
     }
@@ -24,7 +24,7 @@ public partial class CombatReplayTracker
     public override Task AfterSummon(PlayerChoiceContext ctx, Player summoner, Decimal amount)
     {
         if (!LocalContext.IsMe(summoner)) return Task.CompletedTask;
-        WriteIt($"> {FormatPlayer(summoner)} **summoned** `{(int) amount}` <\\");
+        WriteIt($"> {FormatPlayer(summoner)} **summoned** `{(int) amount}`");
         _db.TotalSummoned += (int) amount;
         return Task.CompletedTask;
     }

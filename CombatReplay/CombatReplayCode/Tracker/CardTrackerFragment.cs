@@ -25,7 +25,7 @@ public partial class CombatReplayTracker
         if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardAdded))
         {
             WriteIt(
-                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
+                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`",
                 ReplayLogger.MsgType.CardAdded);
             _db.TotalCardsCreated++;
         }
@@ -33,7 +33,7 @@ public partial class CombatReplayTracker
         {
             // replace the card created output with this now that the pileType has been populated
             WriteIt(
-                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
+                $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`",
                 ReplayLogger.MsgType.CardCreated);
             _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
         }
@@ -41,7 +41,7 @@ public partial class CombatReplayTracker
         {
             // replace the card given output with this now that the pileType has been populated
             WriteIt(
-                $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\",
+                $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`",
                 ReplayLogger.MsgType.CardGiven);
             if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
         }
@@ -49,7 +49,7 @@ public partial class CombatReplayTracker
         {
             // covers all other cases for how cards can enter into combat, such as transform
             WriteIt(
-                $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}` <\\");
+                $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`");
             if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
         }
         return Task.CompletedTask;
@@ -64,7 +64,7 @@ public partial class CombatReplayTracker
         if (!ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardAdded)) _db.OnCardDrawn(card.Title);
         else _db.TotalCardsDrawn++;
         BufferIt(
-            $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)} <\\",
+            $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)}",
             ReplayLogger.MsgType.CardDrawn,
             overwrite: ReplayLogger.MsgType.CardAdded);
         return Task.CompletedTask;
@@ -80,10 +80,10 @@ public partial class CombatReplayTracker
         if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardGiven)) return;
         if (LocalContext.IsMe(creator))
         {
-            BufferIt($"> {FormatPlayer(owner)} **created** `{card.Title}` <\\", ReplayLogger.MsgType.CardCreated);
+            BufferIt($"> {FormatPlayer(owner)} **created** `{card.Title}`", ReplayLogger.MsgType.CardCreated);
             return;
         }
-        BufferIt($"> {FormatPlayer(owner)} **gained** `{card.Title}` <\\", ReplayLogger.MsgType.CardGiven);
+        BufferIt($"> {FormatPlayer(owner)} **gained** `{card.Title}`", ReplayLogger.MsgType.CardGiven);
     }
     
     public void OnAutoPlay(CardModel card, Creature? target)
@@ -92,14 +92,14 @@ public partial class CombatReplayTracker
         if (LocalContext.IsMe(dealer) || (dealer is { IsPet : true} && LocalContext.IsMe(dealer.PetOwner)))
         {
             WriteIt(target != null
-                ? $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} === <\\"
-                : $"> === `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` === <\\");
+                ? $"> ==`{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)}=="
+                : $"> ==`{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}`==");
         }
         else
         {
             WriteIt(target != null
-                ? $"> --- `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)} --- <\\"
-                : $"> --- `{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` --- <\\");
+                ? $"> --`{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}` **targeting** {FormatCreature(target)}--"
+                : $"> --`{dealer.Name}` (`{dealer.CombatId}`) **auto-played** `{card.Title}`--");
         }
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
@@ -121,7 +121,7 @@ public partial class CombatReplayTracker
         if (pileType != PileType.Hand) return;
         // cards that are drawn to hand will trigger this event so we need to buffer this to replace it later
         // cards can be pulled from other piles and added to hand, which is the only case that should be logged here
-        BufferIt($"> {FormatPlayer(card.Owner)} **pulled** {FormatCard(card)} **into** `{pileType.ToString()}` <\\", ReplayLogger.MsgType.CardAdded);
+        BufferIt($"> {FormatPlayer(card.Owner)} **pulled** {FormatCard(card)} **into** `{pileType.ToString()}`", ReplayLogger.MsgType.CardAdded);
         _db.OnCardAddedToHand(card.Title);
     }
     
@@ -132,14 +132,14 @@ public partial class CombatReplayTracker
         if (LocalContext.IsMe(card.Owner))
         {
             WriteIt(action.Target != null
-                ? $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} === <\\"
-                : $"> === {FormatPlayer(action.Player)} **played** `{card.Title}` === <\\");
+                ? $"> =={FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)}=="
+                : $"> =={FormatPlayer(action.Player)} **played** `{card.Title}`==");
         }
         else
         {
             WriteIt(action.Target != null
-                ? $"> --- {FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)} --- <\\"
-                : $"> --- {FormatPlayer(action.Player)} **played** `{card.Title}` --- <\\");
+                ? $"> --{FormatPlayer(action.Player)} **played** `{card.Title}` **targeting** {FormatCreature(action.Target)}--"
+                : $"> --{FormatPlayer(action.Player)} **played** `{card.Title}`--");
         }
         if (!LocalContext.IsMe(card.Owner)) return;
         _db.OnExecuteCard(card.Title);
@@ -153,8 +153,8 @@ public partial class CombatReplayTracker
         // this event only has the name of the card being transformed
         // this is due to having to use prefix patches on async Tasks
         WriteIt(original.Pile != null 
-            ? $"> {FormatPlayer(owner)} **transformed** `{original.Title}` **in** `{original.Pile.Type.ToString()}`<\\"
-            : $"> {FormatPlayer(owner)} **transformed** `{original.Title}` <\\");
+            ? $"> {FormatPlayer(owner)} **transformed** `{original.Title}` **in** `{original.Pile.Type.ToString()}`"
+            : $"> {FormatPlayer(owner)} **transformed** `{original.Title}`");
         _db.TotalCardsCreated++;
     }
 
@@ -162,8 +162,8 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner) || !_db.IsInCombat()) return;
         WriteIt(card.Pile != null 
-            ? $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)} **in** `{card.Pile.Type.ToString()}` <\\"
-            : $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)} <\\");
+            ? $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)} **in** `{card.Pile.Type.ToString()}`"
+            : $"> {FormatPlayer(card.Owner)} **upgraded** {FormatCard(card)}");
     }
     
     private string FormatCard(CardModel card)

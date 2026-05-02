@@ -2,7 +2,7 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public partial class CombatReplayDb
 {
-    public int TotalEnergyGained { get; set; }
+    public int BonusEnergyGained { get; set; }
     public int TotalStarsGained { get; set; }
     public int TotalEnergySpent { get; set; }
     public int TotalStarsSpent { get; set; }

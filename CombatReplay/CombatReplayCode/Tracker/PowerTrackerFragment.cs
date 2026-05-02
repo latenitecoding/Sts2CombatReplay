@@ -12,15 +12,15 @@ public partial class CombatReplayTracker
         CardModel? cardSource)
     {
         WriteIt(IsNonStackablePower(power, target, (int)amount)
-            ? $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()}`] <\\"
-            : $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()} {(int)amount}`] <\\");
+            ? $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()}`]"
+            : $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()} {(int)amount}`]");
         _db.OnApplyPower(power, target, amount, applier, cardSource);
     }
 
     public void OnRemovePower(PowerModel? power)
     {
         if (power == null) return;
-        BufferIt($"> {FormatCreature(power.Owner)} **cleared** [`{power.Title.GetFormattedText()}`] <\\", ReplayLogger.MsgType.PowerCleared);
+        BufferIt($"> {FormatCreature(power.Owner)} **cleared** [`{power.Title.GetFormattedText()}`]", ReplayLogger.MsgType.PowerCleared);
     }
 
     private string FormatPower(PowerModel power)

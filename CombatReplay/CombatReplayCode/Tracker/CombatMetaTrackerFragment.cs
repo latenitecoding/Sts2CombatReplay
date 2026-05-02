@@ -12,14 +12,14 @@ public partial class CombatReplayTracker
     public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> {FormatPlayer(card.Owner)} **discarded** `{card.Title}` <\\");
+        WriteIt($">> {FormatPlayer(card.Owner)} **discarded** `{card.Title}`");
         _db.OnCardDiscarded(card.Title);
         return Task.CompletedTask;
     }
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        WriteIt($"=== Combat {_db.CurrentCombat} **ended** ===\\");
+        WriteIt($"==Combat {_db.CurrentCombat} **ended**==");
         _db.OnEndCombat();
     
         MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
@@ -34,7 +34,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted++;
-        WriteIt($"> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}` <\\");
+        WriteIt($">> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}`");
         return Task.CompletedTask;
     }
     
@@ -42,13 +42,13 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsRetained++;
-        WriteIt($"> {FormatPlayer(card.Owner)} **retained** {FormatCard(card)} **in** `Hand` pile <\\");
+        WriteIt($"> {FormatPlayer(card.Owner)} **retained** {FormatCard(card)} **in** `Hand`");
         return Task.CompletedTask;
     }
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        WriteIt($"=== Combat {_db.CurrentCombat} **was** `victory` ===\\");
+        WriteIt($"==Combat {_db.CurrentCombat} **was** `victory`==");
         return Task.CompletedTask;
     }
     
@@ -56,7 +56,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         _db.TotalEmptyHands++;
-        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` pile <\\");
+        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` pile");
         return Task.CompletedTask;
     }
    
@@ -64,25 +64,25 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
         
-        WriteIt("=== Player Phase **started** ===\\");
+        WriteIt("==Player Phase **started**==");
         
         foreach (var creature in _db.GetCombatCreatureList())
         {
             if (creature.IsDead)
             {
-                WriteIt($"> {FormatCreature(creature)} **defeated** <\\");
+                WriteIt($"> {FormatCreature(creature)} **defeated**");
                 continue;
             }
             
             var powers = string.Join(", ", creature.Powers.Select(power => $"{FormatPower(power)}"));
-            WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers <\\");
+            WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers");
             
             if (creature is { IsPlayer: true } and not { Player : null } and not { Player.PlayerCombatState: null } &&
                 creature.Player.PlayerCombatState.OrbQueue.Orbs.Count > 0)
             {
                 foreach (var orb in creature.Player.PlayerCombatState.OrbQueue.Orbs)
                 {
-                    WriteIt($"> {FormatCreature(creature)} **has** {FormatOrb(orb)} <\\");
+                    WriteIt($"> {FormatCreature(creature)} **has** {FormatOrb(orb)}");
                 }
             }
         }
@@ -94,7 +94,7 @@ public partial class CombatReplayTracker
         var deckSize = pcs.DrawPile.Cards.Count;
         var discardSize = pcs.DiscardPile.Cards.Count;
         var exhaustSize = pcs.ExhaustPile.Cards.Count;
-        WriteIt($"> {FormatPlayer(player)} **have** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` hand|deck|discard|exhaust cards <\\");
+        WriteIt($"> {FormatPlayer(player)} **have** `{handSize}|{deckSize}|{discardSize}|{exhaustSize}` Hand|Deck|Discard|Exhaust cards");
         
         return Task.CompletedTask;       
     }
@@ -103,7 +103,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
         _db.TotalDeckShuffles++;
-        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard` pile <\\");
+        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard`");
         return Task.CompletedTask;
     }
     
@@ -112,11 +112,11 @@ public partial class CombatReplayTracker
         switch (side)
         {
             case CombatSide.Player:
-                WriteIt("=== Player Phase **ended** ===\\");
+                WriteIt("==Player Phase **ended**==");
                 break;
             case CombatSide.Enemy:
-                WriteIt("=== Enemy Phase **ended** ===\\");
-                WriteIt($"=== Turn {_db.CurrentTurn} **ended** ===\\");
+                WriteIt("==Enemy Phase **ended**==");
+                WriteIt($"==Turn {_db.CurrentTurn} **ended**==");
                 break;
             case CombatSide.None:
             default:
@@ -128,7 +128,7 @@ public partial class CombatReplayTracker
     public override Task BeforeCombatStart()
     {
         _db.OnStartCombat();
-        WriteIt($"=== Combat {_db.CurrentCombat} **started** ===\\");
+        WriteIt($"==Combat {_db.CurrentCombat} **started**==");
         
         return Task.CompletedTask;
     }
@@ -137,12 +137,12 @@ public partial class CombatReplayTracker
     {
         if (side == CombatSide.Enemy)
         {
-            WriteIt("=== Enemy Phase **started** ===\\");
+            WriteIt("==Enemy Phase **started**==");
         }
         if (side != CombatSide.Player) return Task.CompletedTask;
         
         _db.OnNextTurn();
-        WriteIt($"=== Turn {_db.CurrentTurn} **started** ===\\");
+        WriteIt($"==Turn {_db.CurrentTurn} **started**==");
         
         return Task.CompletedTask;
     }
