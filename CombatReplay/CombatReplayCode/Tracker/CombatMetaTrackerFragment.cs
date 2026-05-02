@@ -106,25 +106,7 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard`");
         return Task.CompletedTask;
     }
-    
-    public override Task AfterTurnEnd(PlayerChoiceContext ctx, CombatSide side)
-    {
-        switch (side)
-        {
-            case CombatSide.Player:
-                WriteIt("==Player Phase **ended**==");
-                break;
-            case CombatSide.Enemy:
-                WriteIt("==Enemy Phase **ended**==");
-                WriteIt($"==Turn {_db.CurrentTurn} **ended**==");
-                break;
-            case CombatSide.None:
-            default:
-                break;
-        }
-        return Task.CompletedTask;
-    }
-  
+ 
     public override Task BeforeCombatStart()
     {
         _db.OnStartCombat();
@@ -144,6 +126,24 @@ public partial class CombatReplayTracker
         _db.OnNextTurn();
         WriteIt($"==Turn {_db.CurrentTurn} **started**==");
         
+        return Task.CompletedTask;
+    }
+    
+    public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+    {
+        switch (side)
+        {
+            case CombatSide.Player:
+                WriteIt("==Player Phase **ended**==");
+                break;
+            case CombatSide.Enemy:
+                WriteIt("==Enemy Phase **ended**==");
+                WriteIt($"==Turn {_db.CurrentTurn} **ended**==");
+                break;
+            case CombatSide.None:
+            default:
+                break;
+        }
         return Task.CompletedTask;
     }
 }

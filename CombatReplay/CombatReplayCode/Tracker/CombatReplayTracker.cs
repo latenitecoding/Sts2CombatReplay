@@ -105,7 +105,7 @@ public partial class CombatReplayTracker : AbstractModel
 
         if ((isMultiplayer && multiplayerInProgress) || (!isMultiplayer && saveManager.HasRunSave)) return;
         
-        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId} #\n");
+        WriteIt($"# Run **started** as Player NetId `{LocalContext.NetId}` on Profile{saveManager.CurrentProfileId}");
 
         var ascensionLevel = AscensionLevel.None;
         foreach (var ascension in Enum.GetValues<AscensionLevel>())

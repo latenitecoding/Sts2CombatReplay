@@ -9,12 +9,12 @@ public partial class CombatReplayTracker
         // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
         BufferIt(
-            $"\n## Act {_db.CurrentAct} **started**\n",
+            $"## Act {_db.CurrentAct} **started**",
             ReplayLogger.MsgType.ActStarted,
             ReplayLogger.MsgType.RoomEntered);
         if (_db.CurrentRoom > 0)
         {
-            BufferIt($"\n### Room {_db.CurrentRoom} **entered**\n", ReplayLogger.MsgType.ActStarted);
+            BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.ActStarted);
         }
 
         _runSeed ??= _db.RunSeed;
@@ -26,7 +26,7 @@ public partial class CombatReplayTracker
         if (_db.CurrentAct == 0) OnActEntered();
         
         _db.NextRoom();
-        BufferIt($"\n### Room {_db.CurrentRoom} **entered**\n", ReplayLogger.MsgType.RoomEntered);
+        BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.RoomEntered);
     }
 
     public void OnRoomExited()
