@@ -23,30 +23,26 @@ public partial class CombatReplayTracker
 
     public Task OnAddCreature(Creature creature)
     {
-        var designation = (creature.IsEnemy)
-            ? "Enemy"
-            : ((creature.IsPet)
-                ? "Pet"
-                : ((creature.IsPlayer)
-                    ? "Player"
-                    : "Other"));
         if (LocalContext.IsMe(creature))
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <!-- THIS IS ME -->");
+            WriteIt($"> {(creature.Player != null ? FormatPlayer(creature.Player) : "Player")} **as** {FormatCreature(creature)} **present** <!-- THIS IS ME -->");
         }
         else if (creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner))
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present** <!-- THIS IS MY PET -->");
+            WriteIt($"> Pet {FormatCreature(creature)} **present** <!-- THIS IS MY PET -->");
         }
         else
         {
-            WriteIt($"> {designation}: {FormatCreature(creature)} **present**");
+            WriteIt($"> Enemy {FormatCreature(creature)} **present**");
         }
 
         if (creature is not { Player: null })
         {
             var potions = string.Join(", ", creature.Player.Potions.Select(potion => $"`{potion.Title.GetFormattedText()}`"));
-            WriteIt($"> {designation}: {FormatCreature(creature)} **has** [{potions}] potions");
+            WriteIt($"> {FormatPlayer(creature.Player)} {(LocalContext.IsMe(creature.Player) ? "**have**" : "**has**")} [{potions}] potions");
+            
+            var relics = string.Join(", ", creature.Player.Relics.Select(relic => $"`{relic.Title.GetFormattedText()}`"));
+            WriteIt($"> {FormatPlayer(creature.Player)} {(LocalContext.IsMe(creature.Player) ? "**have**" : "**has**")} [{relics}] relics");
         }
 
         _db.OnAddCreature(creature, FormatCreature(creature));
