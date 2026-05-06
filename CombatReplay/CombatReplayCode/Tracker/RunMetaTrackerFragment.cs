@@ -8,14 +8,18 @@ public partial class CombatReplayTracker
     {
         // there is an AfterActEntered, but it doesn't appear to be called by the game
         _db.NextAct();
+        // These event orders can occur:
+        // 1) First run. OnActEntered is called but not OnRoomEntered
+        // 2) Mid run. OnRoomEntered is called then OnActEntered
+        // 3) Neow's Room. OnRoomEntered is called but not OnActEntered
         BufferIt(
             $"## Act {_db.CurrentAct} **started**",
             ReplayLogger.MsgType.ActStarted,
             ReplayLogger.MsgType.RoomEntered);
-        if (_db.CurrentRoom > 0)
-        {
-            BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.ActStarted);
-        }
+        
+        // if the OnRoomEntered isn't called, then we increment CurrentRoom
+        if (_db.CurrentRoom == 0) _db.NextRoom();
+        BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.ActStarted);
 
         _runSeed ??= _db.RunSeed;
         _db.RunSeed ??= _runSeed;
@@ -23,10 +27,12 @@ public partial class CombatReplayTracker
 
     public void OnRoomEntered()
     {
-        if (_db.CurrentAct == 0) OnActEntered();
-        
         _db.NextRoom();
         BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.RoomEntered);
+        
+        // if OnRoomEntered is called but not OnActEntered at the start of Act I, the previous RoomEntered
+        // will be replaced in the OnActEntered
+        if (_db.CurrentAct == 0) OnActEntered();
     }
 
     public void OnRoomExited()
