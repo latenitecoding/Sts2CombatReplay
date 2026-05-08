@@ -122,8 +122,8 @@ public partial class CombatReplayTracker : AbstractModel
 
     public void OnRunEnd(long startTime)
     {
-        var (ok, found) = BufferIt($"==Run **ended**==", ReplayLogger.MsgType.RoomEntered);
-        if (found) _db.CurrentRoom--;
+        if (CheckIt(ReplayLogger.MsgType.RoomEntered)) _db.CurrentRoom--;
+        WriteIt($"==Run **ended**==", ReplayLogger.MsgType.RoomEntered);
         
         MainFile.Logger.Info("CombatReplay tracking stopped");
         MainFile.Logger.Info("Saving Run...");

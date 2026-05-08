@@ -1,3 +1,4 @@
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -38,20 +39,29 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
     
-    public override Task AfterCardRetained(CardModel card)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsRetained++;
-        WriteIt($"> {FormatPlayer(card.Owner)} **retained** {FormatCard(card)} **in** `Hand`");
-        return Task.CompletedTask;
-    }
-
     public override Task AfterCombatVictory(CombatRoom room)
     {
         WriteIt($"==Combat {_db.CurrentCombat} **was** `victory`==");
         return Task.CompletedTask;
     }
     
+    public override Task AfterFlush(
+        PlayerChoiceContext choiceContext,
+        Player player,
+        IReadOnlyCollection<CardModel> flushedCards,
+        IReadOnlyCollection<CardModel> retainedCards)
+    {
+        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
+        
+        foreach (var card in retainedCards)
+        {
+            _db.TotalCardsRetained++;
+            WriteIt($"> {FormatPlayer(card.Owner)} **retained** {FormatCard(card)} **in** `Hand`");
+        }
+        
+        return Task.CompletedTask;
+    }
+
     public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;

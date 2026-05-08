@@ -13,7 +13,7 @@ using Tracker;
 public partial class MainFile : Node
 {
     private const string ModId = "CombatReplay"; //At the moment, this is used only for the Logger and harmony names.
-    public const string Version = "v1.5.1";
+    public const string Version = "v1.6.0";
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
