@@ -17,16 +17,9 @@ public partial class CombatReplayTracker
             ReplayLogger.MsgType.RoomEntered);
         
         // if the OnRoomEntered isn't called, then we increment CurrentRoom
-        if (_db.CurrentRoom == 0)
-        {
-            _db.NextRoom();
-            WriteIt($"### Room {_db.CurrentRoom} **entered**");
-            OnRoomExited();
-        }
-        else
-        {
-            BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.ActStarted);
-        }
+        if (_db.CurrentRoom == 0) _db.NextRoom();
+        
+        BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.ActStarted);
 
         _runSeed ??= _db.RunSeed;
         _db.RunSeed ??= _runSeed;

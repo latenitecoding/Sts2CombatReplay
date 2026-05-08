@@ -119,6 +119,8 @@ public partial class CombatReplayTracker
  
     public override Task BeforeCombatStart()
     {
+        if (CheckIt(ReplayLogger.MsgType.ActStarted)) OnRoomExited();
+        
         _db.OnStartCombat();
         WriteIt($"==Combat {_db.CurrentCombat} **started**==");
         
