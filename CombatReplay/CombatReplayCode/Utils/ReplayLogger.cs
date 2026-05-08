@@ -13,18 +13,18 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     public enum MsgType
     {
         None = 0,
-        ActStarted = 1 << 0,
-        BeforeDamage = 1 << 1,
-        BlockBroken = 1 << 2,
-        CardAdded = 1 << 3,
-        CardCreated = 1 << 4,
-        CardDrawn = 1 << 5,
-        CardGiven = 1 << 6,
-        Defeated = 1 << 7,
-        OrbEvoked = 1 << 8,
-        PetWasHit = 1 << 9,
-        PowerCleared = 1 << 10,
-        RoomEntered = 1 << 11,
+        BeforeDamage = 1 << 0,
+        BlockBroken = 1 << 1,
+        CardAdded = 1 << 2,
+        CardCreated = 1 << 3,
+        CardDrawn = 1 << 4,
+        CardGiven = 1 << 5,
+        Defeated = 1 << 6,
+        OrbEvoked = 1 << 7,
+        PetWasHit = 1 << 8,
+        PowerCleared = 1 << 9,
+        RoomEntered = 1 << 10,
+        RoomExited = 1 << 11,
         RpoHit = 1 << 12, // Relic-Power/Potion-Orb Hit
         TookDamage = 1 << 13
     }
