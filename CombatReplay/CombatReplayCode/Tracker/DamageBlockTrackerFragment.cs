@@ -41,9 +41,11 @@ public partial class CombatReplayTracker
             // have to buffer hits against the pet because they are logged out of order
             // current order is osty damage -> necro block broken -> necro damage (remaining)
             // order should be necro damage -> necro block broken -> osty damage -> necro damage (remaining)
-            BufferIt(
+            var (_, found) = BufferIt(
                 $"> {FormatCreature(dealer)} [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **hit** {FormatCreature(target)}",
+                ReplayLogger.MsgType.PetWasHit,
                 ReplayLogger.MsgType.PetWasHit);
+            if (found) return Task.CompletedTask;
             _db.OnCombatDamageDealt(dealer, target, cardSource, result.TotalDamage, result.UnblockedDamage, result.BlockedDamage);
             return Task.CompletedTask;
         }
