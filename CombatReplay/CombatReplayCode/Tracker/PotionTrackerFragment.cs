@@ -29,6 +29,7 @@ public partial class CombatReplayTracker
     public override bool ShouldProcurePotion(PotionModel potion, Player player)
     {
         // always return true so that we don't change core game logic
+        if (!_db.IsInCombat()) return true;
         if (player.Potions.Count() >= player.MaxPotionCount) return true;
         
         WriteIt($"> {FormatPlayer(player)} **procured** {FormatPotion(potion)}");
