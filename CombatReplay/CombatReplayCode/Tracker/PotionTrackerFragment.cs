@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -24,7 +25,17 @@ public partial class CombatReplayTracker
         if (LocalContext.IsMe(potion.Owner)) _db.TotalPotionsUsed++;
         return Task.CompletedTask;
     }
-
+    
+    public override bool ShouldProcurePotion(PotionModel potion, Player player)
+    {
+        // always return true so that we don't change core game logic
+        if (player.Potions.Count() >= player.MaxPotionCount) return true;
+        
+        WriteIt($"> {FormatPlayer(player)} **procured** {FormatPotion(potion)}");
+        
+        return true;
+    }
+    
     private static string FormatPotion(PotionModel potion)
     {
         var dynamicVars = string.Join(", ", potion.DynamicVars.Values.Select(dynamicVar => $"`{dynamicVar.Name.Replace("Power", "")} {(int) dynamicVar.EnchantedValue}`"));
