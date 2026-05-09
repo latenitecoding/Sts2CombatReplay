@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
@@ -27,7 +28,10 @@ public partial class CombatReplayTracker
     {
         var player = combatState.AllCards.First().Owner;
         WriteIt($"> {FormatPlayer(player)} **gained** `{(int) amount}` energy");
+        
         if (!LocalContext.IsMe(player)) return;
+        if (combatState.Phase == PlayerTurnPhase.Start) return;
+        
         _db.BonusEnergyGained += (int) amount;
     }
 }
