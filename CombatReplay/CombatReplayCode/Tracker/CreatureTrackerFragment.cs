@@ -80,7 +80,19 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(creature)) return;
         _db.TotalHpHealed += trueAmount;
     }
-
+    
+    public void OnCreatureLoseMaxHp(Creature creature, Decimal amount)
+    {
+        // because of ascension levels, after the tutorial run, all characters start at 0 HP and then heal in the first room
+        // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
+        if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
+        
+        var maxHp =  Math.Max(creature.MaxHp - (int)amount, 0);
+        var currentHp = Math.Max(creature.CurrentHp, creature.MaxHp);
+        
+        WriteIt($"> {FormatCreature(creature, currentHp: currentHp, maxHp: maxHp)} **lost** `{amount}` HP");
+    }
+    
     public void OnCreatureStunned(Creature creature)
     {
         WriteIt($"> {FormatCreature(creature)} **stunned**");

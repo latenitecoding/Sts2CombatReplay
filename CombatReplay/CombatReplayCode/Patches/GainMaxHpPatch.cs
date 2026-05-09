@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 namespace CombatReplay.CombatReplayCode.Patches;
 
 [HarmonyPatch(typeof(CreatureCmd), "GainMaxHp")]
-public class MaxHpPatch
+public class GainMaxHpPatch
 {
     static void Prefix(Creature creature, Decimal amount)
     {
