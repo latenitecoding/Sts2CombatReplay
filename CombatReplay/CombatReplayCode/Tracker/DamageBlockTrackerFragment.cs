@@ -111,6 +111,23 @@ public partial class CombatReplayTracker
         var permittedBlock = dealer != null && dealer != target ? target.Block : 0;
         // some playerRpoHits only trigger BeforeDamageReceived even if they are non-lethal
         var playerRpoHit = dealer is { IsPlayer : true } && cardSource == null && target.IsEnemy;
+        
+        // have to track pet damage first and separately
+        if (dealer != null && target is not { Player: null } && target.Player is not { Osty: null } && LocalContext.IsMe(target))
+        {
+            var ostyDamage = Math.Min(Math.Max((int)amount - target.Block - target.Player.Osty.Block, 0), target.Player.Osty.CurrentHp);
+            permittedBlock += ostyDamage;
+            
+            if (ostyDamage > 0)
+            {
+                BufferIt(
+                    $"> {FormatCreature(dealer)} [`Damage {target.Player.Osty.Block}|{ostyDamage}`] **hit** {FormatCreature(target.Player.Osty, isDefeated: ostyDamage >= target.Player.Osty.CurrentHp)}",
+                    ReplayLogger.MsgType.PetWasHit);
+                _db.OnCombatDamageDealt(dealer, target.Player.Osty, cardSource, Math.Max((int)amount - target.Block, 0), ostyDamage, target.Player.Osty.Block);
+                return Task.CompletedTask;
+            }
+        }
+        
         if (permittedBlock + target.CurrentHp > (int) amount && !playerRpoHit)
         {
             return Task.CompletedTask;
