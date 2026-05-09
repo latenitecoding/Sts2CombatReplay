@@ -13,20 +13,23 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     public enum MsgType
     {
         None = 0,
-        BeforeDamage = 1 << 0,
-        BlockBroken = 1 << 1,
-        CardAdded = 1 << 2,
-        CardCreated = 1 << 3,
-        CardDrawn = 1 << 4,
-        CardGiven = 1 << 5,
-        Defeated = 1 << 6,
-        OrbEvoked = 1 << 7,
-        PetWasHit = 1 << 8,
-        PowerCleared = 1 << 9,
-        RoomEntered = 1 << 10,
-        RoomExited = 1 << 11,
-        RpoHit = 1 << 12, // Relic-Power/Potion-Orb Hit
-        TookDamage = 1 << 13
+        ActStarted = 1 << 0,
+        BeforeDamage = 1 << 1,
+        BlockBroken = 1 << 2,
+        CardAdded = 1 << 3,
+        CardCreated = 1 << 4,
+        CardDrawn = 1 << 5,
+        CardGiven = 1 << 6,
+        Defeated = 1 << 7,
+        GainMaxHp = 1 << 8,
+        HealCreature = 1 << 9,
+        OrbEvoked = 1 << 10,
+        PetWasHit = 1 << 11,
+        PowerCleared = 1 << 12,
+        ReviveCreature = 1 << 13,
+        RoomEntered = 1 << 14,
+        RpoHit = 1 << 15, // Relic-Power/Potion-Orb Hit
+        TookDamage = 1 << 16
     }
 
     public static MsgType AllCardTypes()

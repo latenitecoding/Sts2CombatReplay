@@ -18,6 +18,11 @@ public partial class CombatReplayTracker
         
         // sometimes OnActEntered will be called, but not OnRoomEntered
         OnRoomEntered();
+        // replace the new RoomEntered event with an ActStarted event to block the double counted OnRoomExit
+        BufferIt(
+            $"### Room {_db.CurrentRoom} **entered**",
+            ReplayLogger.MsgType.ActStarted,
+            ReplayLogger.MsgType.RoomEntered);
     }
 
     public void OnRoomEntered()
@@ -40,10 +45,14 @@ public partial class CombatReplayTracker
     {
         // it's possible to leave Neow's room without having triggered an OnActEntered
         if (_db.CurrentAct == 0) OnActEntered();
-        // it's possible for OnRoomExited to be called twice after the start of an Act
-        else if (CheckIt(ReplayLogger.MsgType.RoomExited)) return;
+        // it's possible for OnRoomExited to be called twice after the start of Act II or Act III
+        else if (CheckIt(ReplayLogger.MsgType.ActStarted))
+        {
+            Flush();
+            return;
+        }
         
-        BufferIt($"==Room {_db.CurrentRoom} **exited**==", ReplayLogger.MsgType.RoomExited);
+        WriteIt($"==Room {_db.CurrentRoom} **exited**==");
 
         // this is called here to ensure that the room is logged before the setup of the room
         OnRoomEntered();

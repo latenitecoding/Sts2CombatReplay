@@ -48,14 +48,35 @@ public partial class CombatReplayTracker
         _db.OnAddCreature(creature, FormatCreature(creature));
         return Task.CompletedTask;
     }
+
+    public void OnCreatureGainMaxHp(Creature creature, Decimal amount)
+    {
+        // because of ascension levels, after the tutorial run, all characters start at 0 HP and then heal in the first room
+        // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
+        if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
+        
+        BufferIt(
+            $"> {FormatCreature(creature, currentHp: creature.CurrentHp + (int) amount, maxHp: creature.MaxHp + (int) amount)} **gained** `{amount}` HP",
+            ReplayLogger.MsgType.GainMaxHp);
+        
+        var isMyPet = creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner);
+        if (!LocalContext.IsMe(creature) && !isMyPet) return;
+        _db.TotalHpHealed += (int) amount;
+    }
     
     public void OnCreatureHeal(Creature creature, Decimal amount)
     {
         // because of ascension levels, after the tutorial run, all characters start at 0 HP and then heal in the first room
         // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
         if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
+        // ignore if called after gaining max HP
+        if (CheckIt(ReplayLogger.MsgType.GainMaxHp)) return;
+        
         var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
-        WriteIt($"> {FormatCreature(creature)} **healed** `{trueAmount}` HP");
+        BufferIt(
+            $"> {FormatCreature(creature, currentHp: creature.CurrentHp + trueAmount)} **healed** `{trueAmount}` HP",
+                ReplayLogger.MsgType.HealCreature);
+        
         if (!LocalContext.IsMe(creature)) return;
         _db.TotalHpHealed += trueAmount;
     }
@@ -81,9 +102,11 @@ public partial class CombatReplayTracker
         WriteIt($"> {FormatCreature(owner)} **intends** `{state.Id}` [{intentions}]");
     }
    
-    private static string FormatCreature(Creature creature, bool isDefeated = false)
+    private static string FormatCreature(Creature creature, int currentHp = -1, int maxHp = -1, bool isDefeated = false)
     {
-        var shownHp = (creature is not { HpDisplay: HpDisplay.Normal }) ? "Inf/Inf" : $"{(isDefeated ? 0 : creature.CurrentHp)}/{creature.MaxHp}";
+        var shownHp = (creature is not { HpDisplay: HpDisplay.Normal })
+            ? "Inf/Inf"
+            : $"{(isDefeated ? 0 : (currentHp >= 0 ? currentHp : creature.CurrentHp))}/{(maxHp >= 0 ? maxHp : creature.MaxHp)}";
         var creatureName = creature.Name.Replace("#", "\\#");
         return (creature.CombatId != null)
             ? $"`{creatureName}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"

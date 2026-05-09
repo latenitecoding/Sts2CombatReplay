@@ -1,3 +1,4 @@
+using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -11,7 +12,10 @@ public partial class CombatReplayTracker
     {
         if (osty is { IsPet: true } && LocalContext.IsMe(osty.PetOwner)) 
         {
-            WriteIt($"> My {FormatCreature(osty)} **revived**");
+            BufferIt(
+                $"> My {FormatCreature(osty)} **revived**",
+                ReplayLogger.MsgType.ReviveCreature,
+                autoFlush: false);
             _db.TotalOstyRevives += 1;
         }
         else
@@ -24,7 +28,9 @@ public partial class CombatReplayTracker
     public override Task AfterSummon(PlayerChoiceContext ctx, Player summoner, Decimal amount)
     {
         if (!LocalContext.IsMe(summoner)) return Task.CompletedTask;
-        WriteIt($"> {FormatPlayer(summoner)} **summoned** `{(int) amount}`");
+        WriteBefore(
+            $"> {FormatPlayer(summoner)} **summoned** `{(int) amount}`", 
+            ReplayLogger.MsgType.HealCreature | ReplayLogger.MsgType.GainMaxHp);
         _db.TotalSummoned += (int) amount;
         return Task.CompletedTask;
     }

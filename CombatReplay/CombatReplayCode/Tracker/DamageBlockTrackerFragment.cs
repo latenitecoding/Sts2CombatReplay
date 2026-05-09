@@ -36,8 +36,7 @@ public partial class CombatReplayTracker
         ValueProp props, Creature? dealer, CardModel? cardSource)
     {
         if (result.TotalDamage == 0) return Task.CompletedTask;
-        if (dealer != null && target is { IsPet: true } and not { PetOwner: null } &&
-            LocalContext.IsMe(target.PetOwner))
+        if (dealer != null && target is { IsPet: true } && LocalContext.IsMe(target.PetOwner))
         {
             // have to buffer hits against the pet because they are logged out of order
             // current order is osty damage -> necro block broken -> necro damage (remaining)
