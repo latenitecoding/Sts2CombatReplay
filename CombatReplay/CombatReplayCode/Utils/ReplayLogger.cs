@@ -8,6 +8,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     private StreamWriter? _writer;
 
     private readonly LinkedList<BufferedMsg> _bufferStack = [];
+    private MsgType _expectedType = MsgType.None;
 
     [Flags]
     public enum MsgType
@@ -19,19 +20,26 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         CardAdded = 1 << 3,
         CardCreated = 1 << 4,
         CardDrawn = 1 << 5,
-        CardGiven = 1 << 6,
-        Defeated = 1 << 7,
+        CardEntering = 1 << 6,
+        CardGiven = 1 << 7,
         GainMaxHp = 1 << 8,
         HealCreature = 1 << 9,
-        OrbEvoked = 1 << 10,
-        PetWasHit = 1 << 11,
-        PowerCleared = 1 << 12,
-        ReviveCreature = 1 << 13,
-        RoomEntered = 1 << 14,
-        RpoHit = 1 << 15, // Relic-Power/Potion-Orb Hit
-        TookDamage = 1 << 16
+        OrbChanneled = 1 << 10,
+        OrbEvoked = 1 << 11,
+        PetWasHit = 1 << 12,
+        PlayerOrEnemyWasHit = 1 << 13,
+        PowerApplied = 1 << 14,
+        PowerCleared = 1 << 15,
+        ReviveCreature = 1 << 16,
+        RoomEntered = 1 << 17,
+        RoomExited = 1 << 18,
+        RpoHit = 1 << 19, // Relic-Power/Potion-Orb Hit
+        RunEnded = 1 << 20,
+        Summon = 1 << 21,
+        TookDamage = 1 << 22,
+        Any = (1 << 23) - 1,
     }
-
+    
     public static bool Matches(MsgType? flags, MsgType flag)
     {
         if (flags == null) return false;
@@ -40,81 +48,84 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     }
     
     private record BufferedMsg(string Msg, MsgType MsgType);
-
-    public (bool ok, bool found) BufferBefore(string msg, MsgType msgType, MsgType preceded, bool autoFlush = true)
+    
+    private void CheckExpectedTypeUnsafe(MsgType msgType, MsgType expectingType)
     {
+        // do not call without first acquiring a lock
+        var flushIt = _bufferStack.Count > 0 && !Matches(_expectedType, msgType);
+        _expectedType = expectingType;
+
+        if (flushIt) FlushUnsafe();
+    }
+
+    private void FlushUnsafe()
+    {
+        // do not call without first acquiring a lock
+        if (_savePath == null || _writer == null || _bufferStack.Count == 0) return;
+        
+        while (_bufferStack.Count > 0)
+        {
+            _writer.WriteLine(_bufferStack.First().Msg);
+            _bufferStack.RemoveFirst();
+        }
+        
+        _writer.Flush();
+    }
+
+    public (bool ok, bool found) BufferBefore(string msg, MsgType msgType, MsgType preceding, MsgType expecting = MsgType.Any)
+    {
+        if (expecting == MsgType.None) throw new Exception("Should call WriteBefore instead of BufferBefore expecting None");
+        if (_savePath == null || _writer == null) return (false, false);
+        
         lock (_writerLock)
         {
-            if (_bufferStack.Count == 0)
-            {
-                _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-                return (true, false);
-            }
+            CheckExpectedTypeUnsafe(msgType, expecting);
 
-            for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
+            for (var cur = _bufferStack.First; cur != null; cur = cur.Next)
             {
-                if (!Matches(cur.Value.MsgType, preceded)) continue;
+                if (!Matches(cur.Value.MsgType, preceding)) continue;
                 _bufferStack.AddBefore(cur, new BufferedMsg(msg, msgType));
                 return (true, true);
             }
-        }
-        
-        if (autoFlush) Flush();
-        
-        lock (_writerLock)
-        {
+            
             _bufferStack.AddLast(new BufferedMsg(msg, msgType));
+            return (true, false);
         }
-
-        return (true, false);
     }
 
-    public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwrite = MsgType.None, bool autoFlush = true)
+    public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwriting = MsgType.None, MsgType expecting = MsgType.None)
     {
-        if (overwrite != MsgType.None)
+        if (expecting == MsgType.None) throw new Exception("Should call WriteIt instead of BufferIt expecting None");
+        if (_savePath == null || _writer == null) return (false, false);
+
+        lock (_writerLock)
         {
-            lock (_writerLock)
+            CheckExpectedTypeUnsafe(msgType, expecting);
+
+            if (overwriting != MsgType.None)
             {
                 for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
                 {
-                    if (!Matches(cur.Value.MsgType, overwrite)) continue;
+                    if (!Matches(cur.Value.MsgType, overwriting)) continue;
                     cur.Value = new BufferedMsg(msg, msgType);
                     return (true, true);
                 }
             }
-        }
-
-        // don't keep unrelated events together in the same buffer if autoFlush is set
-        if (autoFlush) Flush();
-
-        lock (_writerLock)
-        {
+            
             _bufferStack.AddLast(new BufferedMsg(msg, msgType));
-        }
-
-        return (true, false);
-    }
-
-    public bool CheckIt(MsgType msgType)
-    {
-        lock (_writerLock)
-        {
-            return _bufferStack.Count > 0 && Matches(_bufferStack.Last().MsgType, msgType);
+            return (true, false);
         }
     }
 
+    public bool CheckIt(MsgType msgType) => Matches(PeekBufferType(), msgType);
+    
     public void Flush()
     {
         if (_savePath == null || _writer == null) return;
+
         lock (_writerLock)
         {
-            if (_bufferStack.Count == 0) return;
-            while (_bufferStack.Count > 0)
-            {
-                _writer.WriteLine(_bufferStack.First().Msg);
-                _bufferStack.RemoveFirst();
-            }
-            _writer.Flush();
+            FlushUnsafe();
         }
     }
 
@@ -124,9 +135,9 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     {
         if (_savePath == null) return;
         
-        Flush();
         lock (_writerLock)
         {
+            FlushUnsafe();
             _writer?.Flush();
             _writer?.Close();
             _writer = null;
@@ -142,6 +153,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     public void OnRunStart()
     {
         _savePath = FileUtils.GetSavePath(profileId, isMultiplayer, saveFile, multiRunId);
+        
         lock (_writerLock)
         {
             if (loadSave)
@@ -151,19 +163,29 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 WriteIt("@@@ Loaded **save** @@@\\");
                 return;
             }
+            
             if (File.Exists(_savePath)) MainFile.Logger.Info($"Overwriting existing save @ `{_savePath}`");
             _writer = new StreamWriter(_savePath, append: false);
         }
     }
 
-    public MsgType PeekBufferType() => _bufferStack.Count > 0 ? _bufferStack.Last().MsgType : MsgType.None;
-
-    public (bool ok, bool found) WriteBefore(string msg, MsgType preceded)
+    public MsgType PeekBufferType()
     {
-        if (_savePath == null || _writer == null) return (false, false);
         lock (_writerLock)
         {
-            while (_bufferStack.Count > 0 && !Matches(_bufferStack.First().MsgType, preceded))
+            return _bufferStack.Count > 0 ? _bufferStack.Last().MsgType : MsgType.None;
+        }
+    }
+
+    public (bool ok, bool found) WriteBefore(string msg, MsgType preceding)
+    {
+        if (_savePath == null || _writer == null) return (false, false);
+        
+        lock (_writerLock)
+        {
+            _expectedType = MsgType.None;
+            
+            while (_bufferStack.Count > 0 && !Matches(_bufferStack.First().MsgType, preceding))
             {
                 _writer.WriteLine(_bufferStack.First().Msg);
                 _bufferStack.RemoveFirst();
@@ -172,30 +194,37 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             var found = _bufferStack.Count > 0;
 
             _writer.WriteLine(msg);
-            _writer.Flush();
+            FlushUnsafe();
 
             return (true, found);
         }
     }
     
-    public (bool ok, bool found) WriteIt(string msg, MsgType overwrite = MsgType.None)
+    public (bool ok, bool found) WriteIt(string msg, MsgType overwriting = MsgType.None)
     {
         if (_savePath == null || _writer == null) return (false, false);
-        if (overwrite != MsgType.None)
-        {
-            var (ok, found) = BufferIt(msg, MsgType.None, overwrite, autoFlush: false);
-            Flush();
-            return (ok, found);
-        }
-        
-        Flush();
-        
+
         lock (_writerLock)
         {
-            _writer.WriteLine(msg);
-            _writer.Flush();
-        }
+            _expectedType = MsgType.None;
 
-        return (true, false);
+            var foundIt = false;
+            
+            if (overwriting != MsgType.None)
+            {
+                for (var cur = _bufferStack.Last; cur != null; cur = cur.Previous)
+                {
+                    if (!Matches(cur.Value.MsgType, overwriting)) continue;
+                    cur.Value = new BufferedMsg(msg, MsgType.None);
+                    foundIt = true;
+                    break;
+                }
+            }
+            
+            if (!foundIt) _writer.WriteLine(msg);
+            FlushUnsafe();
+
+            return (true, foundIt);
+        }
     }
 }

@@ -10,12 +10,13 @@ public partial class CombatReplayTracker
 {
     public override Task AfterOstyRevived(Creature osty)
     {
-        if (osty is { IsPet: true } && LocalContext.IsMe(osty.PetOwner)) 
+        if (osty is { IsPet: true } && LocalContext.IsMe(osty.PetOwner))
         {
             BufferIt(
                 $"> My {FormatCreature(osty)} **revived**",
                 ReplayLogger.MsgType.ReviveCreature,
-                autoFlush: false);
+                overwriting: ReplayLogger.MsgType.None,
+                expecting: ReplayLogger.MsgType.Summon);
             _db.TotalOstyRevives += 1;
         }
         else
@@ -30,7 +31,7 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(summoner)) return Task.CompletedTask;
         WriteBefore(
             $"> {FormatPlayer(summoner)} **summoned** `{(int) amount}`", 
-            ReplayLogger.MsgType.HealCreature | ReplayLogger.MsgType.GainMaxHp);
+            preceding: ReplayLogger.MsgType.HealCreature | ReplayLogger.MsgType.GainMaxHp);
         _db.TotalSummoned += (int) amount;
         return Task.CompletedTask;
     }

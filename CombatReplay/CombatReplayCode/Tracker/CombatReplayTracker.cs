@@ -139,14 +139,14 @@ public partial class CombatReplayTracker : AbstractModel
         _db.RunSeed = seed;
     }
     
-    private (bool ok, bool found) BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceded, bool autoFlush = true)
+    private (bool ok, bool found) BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceding, ReplayLogger.MsgType expecting)
     {
-        return _logger?.BufferBefore(msg, msgType, preceded, autoFlush) ?? (false, false);
+        return _logger?.BufferBefore(msg, msgType, preceding, expecting) ?? (false, false);
     }
 
-    private (bool ok, bool found) BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwrite = ReplayLogger.MsgType.None, bool autoFlush = true)
+    private (bool ok, bool found) BufferIt(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType overwriting = ReplayLogger.MsgType.None, ReplayLogger.MsgType expecting = ReplayLogger.MsgType.Any)
     {
-        return _logger?.BufferIt(msg, msgType, overwrite, autoFlush) ?? (false, false);
+        return _logger?.BufferIt(msg, msgType, overwriting, expecting) ?? (false, false);
     }
 
     private bool CheckIt(ReplayLogger.MsgType msgType)
@@ -159,13 +159,13 @@ public partial class CombatReplayTracker : AbstractModel
         _logger?.Flush();
     }
 
-    private (bool ok, bool found) WriteBefore(string msg, ReplayLogger.MsgType preceded)
+    private (bool ok, bool found) WriteBefore(string msg, ReplayLogger.MsgType preceding)
     {
-        return _logger?.WriteBefore(msg, preceded) ?? (false, false);
+        return _logger?.WriteBefore(msg, preceding) ?? (false, false);
     }
 
-    private (bool ok, bool found) WriteIt(string msg, ReplayLogger.MsgType overwrite =  ReplayLogger.MsgType.None)
+    private (bool ok, bool found) WriteIt(string msg, ReplayLogger.MsgType overwriting = ReplayLogger.MsgType.None)
     {
-        return _logger?.WriteIt(msg, overwrite) ?? (false, false);
+        return _logger?.WriteIt(msg, overwriting) ?? (false, false);
     }
 }

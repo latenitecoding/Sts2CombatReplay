@@ -22,7 +22,8 @@ public partial class CombatReplayTracker
         BufferIt(
             $"### Room {_db.CurrentRoom} **entered**",
             ReplayLogger.MsgType.ActStarted,
-            ReplayLogger.MsgType.RoomEntered);
+            overwriting: ReplayLogger.MsgType.RoomEntered,
+            expecting: ReplayLogger.MsgType.RoomExited);
     }
 
     public void OnRoomEntered()
@@ -35,7 +36,11 @@ public partial class CombatReplayTracker
         else if (CheckIt(ReplayLogger.MsgType.RoomEntered)) return;
         
         _db.NextRoom();
-        BufferIt($"### Room {_db.CurrentRoom} **entered**", ReplayLogger.MsgType.RoomEntered);
+        BufferIt(
+            $"### Room {_db.CurrentRoom} **entered**",
+            ReplayLogger.MsgType.RoomEntered,
+            overwriting: ReplayLogger.MsgType.None,
+            expecting: ReplayLogger.MsgType.ActStarted |ReplayLogger.MsgType.RunEnded);
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
         _db.InProgressSave();

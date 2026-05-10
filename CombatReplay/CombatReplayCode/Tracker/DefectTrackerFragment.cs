@@ -16,7 +16,7 @@ public partial class CombatReplayTracker
         // channeled events are triggered after evoke events even though the channel occurs first in game
         WriteBefore(
             $"> {FormatPlayer(player)} **channeled** {FormatOrb(orb)}",
-            ReplayLogger.MsgType.OrbEvoked);
+            preceding: ReplayLogger.MsgType.OrbEvoked);
         _db.TotalOrbsChanneled++;
         return Task.CompletedTask;
     }
@@ -28,7 +28,8 @@ public partial class CombatReplayTracker
         BufferBefore(
             $"> {FormatPlayer(orb.Owner)} **evoked** {FormatOrb(orb, useEvokeVal: true)}",
             ReplayLogger.MsgType.OrbEvoked,
-            ReplayLogger.MsgType.RpoHit);
+            preceding: ReplayLogger.MsgType.RpoHit,
+            expecting: ReplayLogger.MsgType.OrbChanneled);
         _db.TotalOrbsEvoked++;
         return Task.CompletedTask;
     }

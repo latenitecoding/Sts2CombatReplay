@@ -11,16 +11,23 @@ public partial class CombatReplayTracker
     public void OnApplyPower(PowerModel power, Creature target, Decimal amount, Creature? applier,
         CardModel? cardSource)
     {
-        WriteIt(IsNonStackablePower(power, target, (int)amount)
+        BufferIt(IsNonStackablePower(power, target, (int)amount)
             ? $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()}`]"
-            : $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()} {(int)amount}`]");
+            : $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()} {(int)amount}`]",
+            ReplayLogger.MsgType.PowerApplied,
+            overwriting: ReplayLogger.MsgType.None,
+            expecting: ReplayLogger.MsgType.Any);
         _db.OnApplyPower(power, target, amount, applier, cardSource);
     }
 
     public void OnRemovePower(PowerModel? power)
     {
         if (power == null) return;
-        BufferIt($"> {FormatCreature(power.Owner)} **cleared** [`{power.Title.GetFormattedText()}`]", ReplayLogger.MsgType.PowerCleared);
+        BufferIt(
+            $"> {FormatCreature(power.Owner)} **cleared** [`{power.Title.GetFormattedText()}`]",
+            ReplayLogger.MsgType.PowerCleared,
+            overwriting: ReplayLogger.MsgType.None,
+            expecting: ReplayLogger.MsgType.Any);
     }
 
     private string FormatPower(PowerModel power)

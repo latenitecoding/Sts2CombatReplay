@@ -13,11 +13,9 @@ public partial class CombatReplayTracker
     public override Task AfterDeath(PlayerChoiceContext ctx, Creature creature, bool wasRemovalPrevented,
         float deathAnimLength)
     {
-        BufferBefore(
+        WriteBefore(
             $"> {FormatCreature(creature)} **defeated**",
-            ReplayLogger.MsgType.Defeated,
-            ReplayLogger.MsgType.PowerCleared,
-            autoFlush: false);
+            preceding: ReplayLogger.MsgType.PowerCleared);
         return Task.CompletedTask; 
     }
 
@@ -57,10 +55,13 @@ public partial class CombatReplayTracker
         
         BufferIt(
             $"> {FormatCreature(creature, currentHp: creature.CurrentHp + (int) amount, maxHp: creature.MaxHp + (int) amount)} **gained** `{amount}` HP",
-            ReplayLogger.MsgType.GainMaxHp);
+            ReplayLogger.MsgType.GainMaxHp,
+            overwriting: ReplayLogger.MsgType.None,
+            expecting: ReplayLogger.MsgType.HealCreature | ReplayLogger.MsgType.ReviveCreature | ReplayLogger.MsgType.Summon);
         
         var isMyPet = creature is { IsPet: true } && LocalContext.IsMe(creature.PetOwner);
         if (!LocalContext.IsMe(creature) && !isMyPet) return;
+        
         _db.TotalHpHealed += (int) amount;
     }
     
@@ -75,7 +76,9 @@ public partial class CombatReplayTracker
         var trueAmount = Math.Min((int) amount, creature.MaxHp - creature.CurrentHp);
         BufferIt(
             $"> {FormatCreature(creature, currentHp: creature.CurrentHp + trueAmount)} **healed** `{trueAmount}` HP",
-                ReplayLogger.MsgType.HealCreature);
+            ReplayLogger.MsgType.HealCreature,
+            overwriting: ReplayLogger.MsgType.None,
+            expecting: ReplayLogger.MsgType.ReviveCreature | ReplayLogger.MsgType.Summon);
         
         if (!LocalContext.IsMe(creature)) return;
         _db.TotalHpHealed += trueAmount;
