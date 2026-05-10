@@ -154,6 +154,11 @@ public partial class CombatReplayTracker : AbstractModel
         return _logger?.CheckIt(msgType) ?? false;
     }
 
+    private bool ClearIt(ReplayLogger.MsgType msgType)
+    {
+        return _logger?.ClearIt(msgType) ?? false;
+    }
+
     private void Flush()
     {
         _logger?.Flush();

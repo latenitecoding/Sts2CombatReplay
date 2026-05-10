@@ -10,13 +10,6 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker
 {
-    public override Task AfterCardDiscarded(PlayerChoiceContext ctx, CardModel card)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($">> {FormatPlayer(card.Owner)} **discarded** `{card.Title}`");
-        _db.OnCardDiscarded(card.Title);
-        return Task.CompletedTask;
-    }
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
@@ -35,7 +28,7 @@ public partial class CombatReplayTracker
     {
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         _db.TotalCardsExhausted++;
-        WriteIt($">> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}`");
+        WriteIt($"> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}`");
         return Task.CompletedTask;
     }
     
@@ -62,14 +55,6 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
 
-    public override Task AfterHandEmptied(PlayerChoiceContext ctx, Player player)
-    {
-        if (!LocalContext.IsMe(player)) return Task.CompletedTask;
-        _db.TotalEmptyHands++;
-        WriteIt($"> {FormatPlayer(player)} **emptied** `Hand` pile");
-        return Task.CompletedTask;
-    }
-   
     public override Task AfterPlayerTurnStart(PlayerChoiceContext ctx, Player player)
     {
         if (!LocalContext.IsMe(player)) return Task.CompletedTask;
@@ -109,14 +94,6 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;       
     }
 
-    public override Task AfterShuffle(PlayerChoiceContext ctx, Player shuffler)
-    {
-        if (!LocalContext.IsMe(shuffler)) return Task.CompletedTask;
-        _db.TotalDeckShuffles++;
-        WriteIt($"> {FormatPlayer(shuffler)} **shuffled** `Discard`");
-        return Task.CompletedTask;
-    }
- 
     public override Task BeforeCombatStart()
     {
         _db.OnStartCombat();

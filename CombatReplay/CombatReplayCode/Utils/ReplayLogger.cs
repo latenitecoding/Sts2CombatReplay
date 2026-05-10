@@ -118,6 +118,21 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
     }
 
     public bool CheckIt(MsgType msgType) => Matches(PeekBufferType(), msgType);
+
+    public bool ClearIt(MsgType msgType)
+    {
+        if (_savePath == null || _writer == null) return false;
+
+        lock (_writerLock)
+        {
+            while (_bufferStack.Count > 0 && Matches(_bufferStack.Last().MsgType, msgType))
+            {
+                _bufferStack.RemoveLast();
+            }
+
+            return true;
+        }
+    }
     
     public void Flush()
     {
@@ -128,7 +143,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
             FlushUnsafe();
         }
     }
-
+    
     public void OnCombatEnd() => Flush();
 
     public void OnRunEnd(long startTime)
@@ -221,10 +236,14 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
                 }
             }
             
-            if (!foundIt) _writer.WriteLine(msg);
             FlushUnsafe();
 
-            return (true, foundIt);
+            if (foundIt) return (true, true);
+            
+            _writer.WriteLine(msg);
+            _writer.Flush();
+
+            return (true, false);
         }
     }
 }
