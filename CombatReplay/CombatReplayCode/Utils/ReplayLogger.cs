@@ -37,7 +37,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         RunEnded = 1 << 20,
         Summon = 1 << 21,
         TookDamage = 1 << 22,
-        Any = (1 << 23) - 1,
+        Any = ~None,
     }
     
     public static bool Matches(MsgType? flags, MsgType flag)
@@ -93,7 +93,7 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         }
     }
 
-    public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwriting = MsgType.None, MsgType expecting = MsgType.None)
+    public (bool ok, bool found) BufferIt(string msg, MsgType msgType, MsgType overwriting = MsgType.None, MsgType expecting = MsgType.Any)
     {
         if (expecting == MsgType.None) throw new Exception("Should call WriteIt instead of BufferIt expecting None");
         if (_savePath == null || _writer == null) return (false, false);

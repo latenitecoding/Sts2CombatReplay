@@ -40,7 +40,7 @@ public partial class CombatReplayTracker
             $"### Room {_db.CurrentRoom} **entered**",
             ReplayLogger.MsgType.RoomEntered,
             overwriting: ReplayLogger.MsgType.None,
-            expecting: ReplayLogger.MsgType.ActStarted |ReplayLogger.MsgType.RunEnded);
+            expecting: ReplayLogger.MsgType.ActStarted | ReplayLogger.MsgType.RunEnded);
         
         MainFile.Logger.Info($"CombatReplay logging stats for room {_db.CurrentRoom}");
         _db.InProgressSave();

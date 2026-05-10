@@ -70,6 +70,7 @@ public partial class CombatReplayTracker
         // because of ascension levels, after the tutorial run, all characters start at 0 HP and then heal in the first room
         // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
         if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
+        
         // ignore if called after gaining max HP
         if (CheckIt(ReplayLogger.MsgType.GainMaxHp)) return;
         
@@ -90,8 +91,8 @@ public partial class CombatReplayTracker
         // this first room of healing that sets the character to their starting HP shouldn't be logged as healing
         if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
         
-        var maxHp =  Math.Max(creature.MaxHp - (int)amount, 0);
-        var currentHp = Math.Min(creature.CurrentHp, creature.MaxHp);
+        var maxHp = Math.Max(creature.MaxHp - (int)amount, 0);
+        var currentHp = Math.Min(creature.CurrentHp, maxHp);
         
         WriteIt($"> {FormatCreature(creature, currentHp: currentHp, maxHp: maxHp)} **lost** `{amount}` HP");
     }
