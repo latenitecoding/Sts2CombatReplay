@@ -26,7 +26,9 @@ public partial class CombatReplayTracker
 
     public void OnGainEnergy(PlayerCombatState combatState, Decimal amount)
     {
-        var player = combatState.AllCards.First().Owner;
+        var player = combatState.AllCards.FirstOrDefault()?.Owner ?? null;
+        if (player == null) return;
+        
         WriteIt($"> {FormatPlayer(player)} **gained** `{(int) amount}` energy");
         
         if (!LocalContext.IsMe(player)) return;

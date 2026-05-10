@@ -37,7 +37,7 @@ public partial class CombatReplayTracker
                 ReplayLogger.MsgType.CardCreated);
             _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
         }
-        else if (ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardGiven))
+        else if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardGiven))
         {
             // replace the card given output with this now that the pileType has been populated
             WriteIt(
@@ -61,7 +61,7 @@ public partial class CombatReplayTracker
         // this event is always called when a card is drawn from the deck into hand
         // the event for OnCardAdded is also called in those cases and should be replaced with this event
         // do not double count the number of times are card is added to hand
-        if (!ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardAdded)) _db.OnCardDrawn(card.Title);
+        if (!ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardAdded)) _db.OnCardDrawn(card.Title);
         else _db.TotalCardsDrawn++;
         BufferIt(
             $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)}",
@@ -76,7 +76,7 @@ public partial class CombatReplayTracker
         // created and given cards, like statuses, will trigger this, but their pileType won't be populated yet
         // these events are being buffered to be replaced later in the AfterCardEnteredCombat (always called)
         // some creation events will redundantly trigger this hook so guards are also necessary
-        if (ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardCreated)) return;
+        if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardCreated)) return;
         if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardGiven)) return;
         if (LocalContext.IsMe(creator))
         {
@@ -115,7 +115,7 @@ public partial class CombatReplayTracker
         // - status card is given by enemy and added to a card pile (handled in AfterCardEnteredCombat)
         if (!LocalContext.IsMe(owner) || !_db.IsInCombat()) return;
         // cards that are created by the player or given by an enemy will also trigger the AfterCardEnteredCombat event
-        if (ReplayLogger.Matches(_logger?.PeekBufferType() , ReplayLogger.MsgType.CardCreated)) return;
+        if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardCreated)) return;
         if (ReplayLogger.Matches(_logger?.PeekBufferType(), ReplayLogger.MsgType.CardGiven)) return;
         // only interested in logging cards that are added to hand to keep track of cards in hand
         if (pileType != PileType.Hand) return;

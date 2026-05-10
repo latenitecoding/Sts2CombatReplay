@@ -88,7 +88,7 @@ public partial class CombatReplayTracker
         if (_db is { CurrentRoom: <= 1, CurrentCombat: 0 }) return;
         
         var maxHp =  Math.Max(creature.MaxHp - (int)amount, 0);
-        var currentHp = Math.Max(creature.CurrentHp, creature.MaxHp);
+        var currentHp = Math.Min(creature.CurrentHp, creature.MaxHp);
         
         WriteIt($"> {FormatCreature(creature, currentHp: currentHp, maxHp: maxHp)} **lost** `{amount}` HP");
     }

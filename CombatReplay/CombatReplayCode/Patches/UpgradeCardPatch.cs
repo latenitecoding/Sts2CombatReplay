@@ -25,4 +25,5 @@ public class UpgradeCardPatch
         {
             MainFile.Tracker.OnUpgradeCard(card);
         }
-    }}
+    }
+}

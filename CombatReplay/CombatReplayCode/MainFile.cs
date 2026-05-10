@@ -8,7 +8,6 @@ namespace CombatReplay.CombatReplayCode;
 using Patches;
 using Tracker;
 
-//You're recommended but not required to keep all your code in this package and all your assets in the RunReplay folder.
 [ModInitializer(nameof(Initialize))]
 public partial class MainFile : Node
 {
@@ -39,6 +38,11 @@ public partial class MainFile : Node
         RunManager.Instance.ActEntered += OnActEntered;
         // the best (if not only) room exited hook
         RunManager.Instance.RoomExited += OnRoomExited;
+        // there is also RunManager.Instance.RoomEntered which is not being used
+        // because there are many events that are triggered before RoomEntered
+        // but always after RoomExited, so OnRoomExited calls OnRoomEntered
+        // to ensure that those events are grouped into the next room
+        // start of combat events are one such example
 
         Logger.Info("RunManager event handlers set");
         

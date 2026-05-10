@@ -11,8 +11,8 @@ namespace CombatReplay.CombatReplayCode.Tracker;
 
 public partial class CombatReplayTracker : AbstractModel
 {
-    public static string DbFile = "sts2_combat_stats_current.json";
-    public static string TrackerFile = "sts2_combat_tracker_current.replay";
+    private const string DbFile = "sts2_combat_stats_current.json";
+    private const string TrackerFile = "sts2_combat_tracker_current.replay";
     
     // Required by AbstractModel; used for hooking into ModHelper
     public override bool ShouldReceiveCombatHooks => true;
@@ -122,7 +122,6 @@ public partial class CombatReplayTracker : AbstractModel
 
     public void OnRunEnd(long startTime)
     {
-        if (CheckIt(ReplayLogger.MsgType.RoomEntered)) _db.CurrentRoom--;
         var (_, found) = WriteIt($"==Run **ended**==", ReplayLogger.MsgType.RoomEntered);
         if (found) _db.CurrentRoom--;
         

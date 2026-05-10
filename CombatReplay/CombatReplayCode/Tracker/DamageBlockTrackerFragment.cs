@@ -1,4 +1,3 @@
-using System.Formats.Tar;
 using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;

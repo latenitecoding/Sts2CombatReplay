@@ -21,4 +21,5 @@ public class StunCreaturePatch
     static void Postfix(Creature creature)
     {
         MainFile.Tracker.OnCreatureStunned(creature);
-    }}
+    }
+}

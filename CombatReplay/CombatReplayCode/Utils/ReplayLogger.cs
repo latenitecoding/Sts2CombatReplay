@@ -32,11 +32,6 @@ public class ReplayLogger(int profileId, bool isMultiplayer, string saveFile, bo
         TookDamage = 1 << 16
     }
 
-    public static MsgType AllCardTypes()
-    {
-        return MsgType.CardAdded | MsgType.CardCreated | MsgType.CardDrawn | MsgType.CardGiven;
-    }
-
     public static bool Matches(MsgType? flags, MsgType flag)
     {
         if (flags == null) return false;

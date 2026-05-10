@@ -46,18 +46,12 @@ public partial class CombatReplayTracker
 
     private string FormatOrb(OrbModel orb, bool useEvokeVal = false)
     {
-        if (orb is LightningOrb or GlassOrb or DarkOrb)
+        return orb switch
         {
-            return $"`{orb.Title.GetFormattedText()} Orb` [`Damage {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
-        }
-        else if (orb is FrostOrb)
-        {
-            return $"`{orb.Title.GetFormattedText()} Orb` [`Block {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
-        }
-        else if (orb is PlasmaOrb)
-        {
-            return $"`{orb.Title.GetFormattedText()} Orb` [`Energy {(int) (useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]";
-        }
-        return $"`{orb.Title.GetFormattedText()} Orb`";
+            LightningOrb or GlassOrb or DarkOrb => $"`{orb.Title.GetFormattedText()} Orb` [`Damage {(int)(useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]",
+            FrostOrb => $"`{orb.Title.GetFormattedText()} Orb` [`Block {(int)(useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]",
+            PlasmaOrb => $"`{orb.Title.GetFormattedText()} Orb` [`Energy {(int)(useEvokeVal ? orb.EvokeVal : orb.PassiveVal)}`]",
+            _ => $"`{orb.Title.GetFormattedText()} Orb`",
+        };
     }
 }

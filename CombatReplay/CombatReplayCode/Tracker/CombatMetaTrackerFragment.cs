@@ -84,10 +84,10 @@ public partial class CombatReplayTracker
                 continue;
             }
             
-            var powers = string.Join(", ", creature.Powers.Select(power => $"{FormatPower(power)}"));
+            var powers = string.Join(", ", creature.Powers.Select(FormatPower));
             WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers");
             
-            if (creature is { IsPlayer: true } and not { Player : null } and not { Player.PlayerCombatState: null } &&
+            if (creature is { IsPlayer: true } and not { Player: null } and not { Player.PlayerCombatState: null } &&
                 creature.Player.PlayerCombatState.OrbQueue.Orbs.Count > 0)
             {
                 foreach (var orb in creature.Player.PlayerCombatState.OrbQueue.Orbs)
@@ -127,16 +127,18 @@ public partial class CombatReplayTracker
 
     public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, ICombatState combatState)
     {
-        if (side == CombatSide.Enemy)
+        switch (side)
         {
-            WriteIt("==Enemy Phase **started**==");
+            case CombatSide.Player:
+                _db.OnNextTurn();
+                WriteIt($"==Turn {_db.CurrentTurn} **started**==");
+                return Task.CompletedTask;
+            case CombatSide.Enemy:
+                WriteIt("==Enemy Phase **started**==");
+                return Task.CompletedTask;
+            default:
+                return Task.CompletedTask;
         }
-        if (side != CombatSide.Player) return Task.CompletedTask;
-        
-        _db.OnNextTurn();
-        WriteIt($"==Turn {_db.CurrentTurn} **started**==");
-        
-        return Task.CompletedTask;
     }
     
     public override Task BeforeTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
