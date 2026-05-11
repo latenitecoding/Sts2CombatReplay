@@ -11,6 +11,8 @@ public partial class CombatReplayTracker
     public void OnApplyPower(PowerModel power, Creature target, Decimal amount, Creature? applier,
         CardModel? cardSource)
     {
+        if (!IsNonStackablePower(power, target, (int)amount) && (int)amount == 0) return;
+        
         BufferIt(IsNonStackablePower(power, target, (int)amount)
             ? $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()}`]"
             : $"> {FormatCreature(target)} **received** [`{power.Title.GetFormattedText()} {(int)amount}`]",
@@ -39,7 +41,7 @@ public partial class CombatReplayTracker
 
     private bool IsNonStackablePower(PowerModel power, Creature? target, int amount)
     {
-        if (power is StrengthPower) return false;
+        if (power is StrengthPower or WeakPower or VulnerablePower or PoisonPower or DoomPower) return false;
         return power.StackType is not PowerStackType.Counter || (amount < 0 && target != null && !target.HasPower(power.Id));
     }
 }

@@ -24,14 +24,6 @@ public partial class CombatReplayTracker
         return Task.CompletedTask;
     }
 
-    public override Task AfterCardExhausted(PlayerChoiceContext ctx, CardModel card, bool causedByEthereal)
-    {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        _db.TotalCardsExhausted++;
-        WriteIt($"> {FormatPlayer(card.Owner)} **exhausted** `{card.Title}`");
-        return Task.CompletedTask;
-    }
-    
     public override Task AfterCombatVictory(CombatRoom room)
     {
         WriteIt($"==Combat {_db.CurrentCombat} **was** `victory`==");
