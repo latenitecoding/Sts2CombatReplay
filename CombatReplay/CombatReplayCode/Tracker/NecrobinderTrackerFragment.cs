@@ -28,7 +28,7 @@ public partial class CombatReplayTracker
     
     public override Task AfterSummon(PlayerChoiceContext ctx, Player summoner, Decimal amount)
     {
-        if (!LocalContext.IsMe(summoner)) return Task.CompletedTask;
+        if (!LocalContext.IsMe(summoner) || (int)amount <= 0) return Task.CompletedTask;
         WriteBefore(
             $"> {FormatPlayer(summoner)} **summoned** `{(int) amount}`", 
             preceding: ReplayLogger.MsgType.HealCreature | ReplayLogger.MsgType.GainMaxHp);

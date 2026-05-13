@@ -18,8 +18,8 @@ public partial class CombatReplayTracker
     
     public override Task AfterEnergySpent(CardModel card, int amount)
     {
-        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
-        WriteIt($"> `{card.Title}` **cost** `{amount}` energy");
+        if (!LocalContext.IsMe(card.Owner) || amount <= 0) return Task.CompletedTask;
+        WriteIt($"> {FormatPlayer(card.Owner)} **spent** `{amount}` energy **on** `{card.Title}`");
         _db.TotalEnergySpent += amount;
         return Task.CompletedTask;
     }
@@ -27,7 +27,7 @@ public partial class CombatReplayTracker
     public void OnGainEnergy(PlayerCombatState combatState, Decimal amount)
     {
         var player = combatState.AllCards.FirstOrDefault()?.Owner ?? null;
-        if (player == null) return;
+        if (player == null || (int)amount <= 0) return;
         
         WriteIt($"> {FormatPlayer(player)} **gained** `{(int) amount}` energy");
         

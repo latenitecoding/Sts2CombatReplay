@@ -79,14 +79,20 @@ public partial class CombatReplayTracker
         // this event is always called when a card is drawn from the deck into hand
         // the event for OnCardAdded is also called in those cases and should be replaced with this event
         // do not double count the number of times are card is added to hand
-        if (!CheckIt(ReplayLogger.MsgType.CardAdded)) _db.OnCardDrawn(card.Title);
-        else _db.TotalCardsDrawn++;
-        
-        BufferIt(
+        var (_, found) = BufferIt(
             $"> {FormatPlayer(card.Owner)} **drew** {FormatCard(card)}",
             ReplayLogger.MsgType.CardDrawn,
             overwriting: ReplayLogger.MsgType.CardAdded,
             expecting: ReplayLogger.MsgType.CardAdded);
+        
+        if (found)
+        {
+            _db.TotalCardsDrawn++;
+            Flush();
+            return Task.CompletedTask;
+        }
+        
+        _db.OnCardDrawn(card.Title);
         return Task.CompletedTask;
     }
     
@@ -152,15 +158,21 @@ public partial class CombatReplayTracker
         var dealer = card.Owner;
         if (LocalContext.IsMe(dealer))
         {
-            WriteIt(target != null
+            BufferIt(target != null
                 ? $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)} **targeting** {FormatCreature(target)}=="
-                : $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)}==");
+                : $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)}==",
+                ReplayLogger.MsgType.CardPlayed,
+                overwriting: ReplayLogger.MsgType.CardPlayed,
+                expecting: ReplayLogger.MsgType.CardAdded);
         }
         else
         {
-            WriteIt(target != null
+            BufferIt(target != null
                 ? $"> --{FormatPlayer(dealer)} **auto-played** {FormatCard(card)} **targeting** {FormatCreature(target)}--"
-                : $"> --{FormatPlayer(dealer)} **auto-played** {FormatCard(card)}--");
+                : $"> --{FormatPlayer(dealer)} **auto-played** {FormatCard(card)}--",
+                ReplayLogger.MsgType.CardPlayed,
+                overwriting: ReplayLogger.MsgType.CardPlayed,
+                expecting: ReplayLogger.MsgType.CardAdded);
         }
         
         if (!LocalContext.IsMe(card.Owner)) return;
@@ -180,9 +192,20 @@ public partial class CombatReplayTracker
         // cards that are created by the player or given by an enemy will also trigger the AfterCardEnteredCombat event
         if (CheckIt(ReplayLogger.MsgType.CardCreated | ReplayLogger.MsgType.CardGiven)) return;
         if (pileType is PileType.Discard or PileType.Exhaust) return;
-        if (CheckIt(ReplayLogger.MsgType.CardDrawn))
+        
+        if (CheckIt(ReplayLogger.MsgType.CardDrawn) || (pileType is PileType.Play && CheckIt(ReplayLogger.MsgType.CardPlayed)))
         {
             Flush();
+            return;
+        }
+
+        if (pileType is PileType.Play)
+        {
+            BufferIt(
+                $"> =={FormatPlayer(owner)} **auto-played** {FormatCard(card)}==",
+                ReplayLogger.MsgType.CardPlayed,
+                overwriting: ReplayLogger.MsgType.None,
+                expecting: ReplayLogger.MsgType.CardPlayed);
             return;
         }
 
@@ -192,7 +215,7 @@ public partial class CombatReplayTracker
             $"> {FormatPlayer(card.Owner)} **pulled** {FormatCard(card)} **into** `{pileType.ToString()}`",
             ReplayLogger.MsgType.CardAdded,
             overwriting: ReplayLogger.MsgType.None,
-            expecting: ReplayLogger.MsgType.CardAdded | ReplayLogger.MsgType.CardDrawn | ReplayLogger.MsgType.CardEntering);
+            expecting: ReplayLogger.MsgType.CardAdded | ReplayLogger.MsgType.CardDrawn | ReplayLogger.MsgType.CardEntering | ReplayLogger.MsgType.PlayerOrEnemyWasHit | ReplayLogger.MsgType.PowerApplied | ReplayLogger.MsgType.TookDamage);
         _db.OnCardAddedToHand(card.Title);
     }
     
