@@ -88,7 +88,7 @@ public partial class CombatReplayTracker : AbstractModel
 
         // if the player plays multiple runs one after another, then we need to recreate the db
         // if the db is on anything other than Act 0, it has already been used for a run
-        if (_db.CurrentAct > 0) _db = new CombatReplayDb();
+        if (_db.FinalAct > 0) _db = new CombatReplayDb();
         _db = (isMultiplayer && multiplayerInProgress) || (!isMultiplayer && saveManager.HasRunSave)
             ? CombatReplayDb.LoadFromFileOrElse(
                 saveManager.CurrentProfileId,
@@ -123,7 +123,7 @@ public partial class CombatReplayTracker : AbstractModel
     public void OnRunEnd(long startTime)
     {
         var (_, found) = WriteIt($"==Run **ended**==", ReplayLogger.MsgType.RoomEntered);
-        if (found) _db.CurrentRoom--;
+        if (found) _db.FinalRoom--;
         
         MainFile.Logger.Info("CombatReplay tracking stopped");
         MainFile.Logger.Info("Saving Run...");

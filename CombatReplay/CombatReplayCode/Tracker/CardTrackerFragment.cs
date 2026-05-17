@@ -20,6 +20,8 @@ public partial class CombatReplayTracker
 
     public override Task AfterCardEnteredCombat(CardModel card)
     {
+        if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
+        
         // this covers all cases of transformed, created, and given cards
         // there could be other cards that trigger both OnCardAdded and this event
         // the following condition is here to catch those possible cases
@@ -36,7 +38,7 @@ public partial class CombatReplayTracker
             WriteIt(
                 $"> {FormatPlayer(card.Owner)} **created** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`",
                 overwriting: ReplayLogger.MsgType.CardCreated);
-            _db.OnCardCreated(card.Title, true, card.Pile is { Type: PileType.Hand });
+            _db.OnCardCreated(card, true, card.Pile is { Type: PileType.Hand });
         }
         else if (CheckIt(ReplayLogger.MsgType.CardDrawn))
         {
@@ -49,14 +51,14 @@ public partial class CombatReplayTracker
                 $"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`",
                 overwriting: ReplayLogger.MsgType.CardGiven);
             
-            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
+            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card);
         }
         else
         {
             // covers all other cases for how cards can enter into combat, such as transform
             WriteIt($"> {FormatPlayer(card.Owner)} **gained** {FormatCard(card)} **into** `{card.Pile?.Type.ToString() ?? "N/A"}`");
             
-            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card.Title);
+            if (card.Pile is { Type: PileType.Hand }) _db.OnCardAddedToHand(card);
         }
         
         return Task.CompletedTask;
@@ -67,7 +69,7 @@ public partial class CombatReplayTracker
         if (!LocalContext.IsMe(card.Owner)) return Task.CompletedTask;
         
         WriteIt($"> {FormatPlayer(card.Owner)} **discarded** {FormatCard(card)}");
-        _db.OnCardDiscarded(card.Title);
+        _db.OnCardDiscarded(card);
         
         return Task.CompletedTask;
     }
@@ -92,7 +94,7 @@ public partial class CombatReplayTracker
             return Task.CompletedTask;
         }
         
-        _db.OnCardDrawn(card.Title);
+        _db.OnCardDrawn(card);
         return Task.CompletedTask;
     }
     
@@ -176,7 +178,7 @@ public partial class CombatReplayTracker
         }
         
         if (!LocalContext.IsMe(card.Owner)) return;
-        _db.OnExecuteCard(card.Title);
+        _db.OnExecuteCard(card);
     }
 
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)
@@ -216,7 +218,7 @@ public partial class CombatReplayTracker
             ReplayLogger.MsgType.CardAdded,
             overwriting: ReplayLogger.MsgType.None,
             expecting: ReplayLogger.MsgType.CardAdded | ReplayLogger.MsgType.CardDrawn | ReplayLogger.MsgType.CardEntering | ReplayLogger.MsgType.PlayerOrEnemyWasHit | ReplayLogger.MsgType.PowerApplied | ReplayLogger.MsgType.TookDamage);
-        _db.OnCardAddedToHand(card.Title);
+        _db.OnCardAddedToHand(card);
     }
     
     public void OnExecuteCard(PlayCardAction action)
@@ -237,7 +239,7 @@ public partial class CombatReplayTracker
         }
         
         if (!LocalContext.IsMe(card.Owner)) return;
-        _db.OnExecuteCard(card.Title);
+        _db.OnExecuteCard(card);
     }
    
     public void OnTransformCard(Player owner, CardModel original)

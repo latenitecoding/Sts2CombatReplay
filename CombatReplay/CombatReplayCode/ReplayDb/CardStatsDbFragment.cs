@@ -1,18 +1,28 @@
 using System.Text.RegularExpressions;
-using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Models;
 
 namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public partial class CombatReplayDb
 {
-    public Dictionary<string, CardStats> CardPlayStats { get; init; } = new();
+    public Dictionary<string, CardStats> CardPlayStats { get; init; } = [];
     
     private string _prevCardPlay = "";
     private int _currentAttackDamage;
     private int _currentDefenseBlock;
-    
-    public int BestSingleDamage { get; set; }
-    public int BestSingleBlock { get; set; }
+
+    public Dictionary<string, object> BestSingleDamage { get; set; } = new()
+    {
+        ["Title"] = "",
+        ["Damage"] = 0,
+    };
+
+    public Dictionary<string, object> BestSingleBlock { get; set; } = new()
+    {
+        ["Title"] = "",
+        ["Block"] = 0,
+    };
 
     public Dictionary<string, CardStats> BestAttack { get; init; } = [];
     public Dictionary<string, CardStats> BestDefend { get; init; } = [];
@@ -20,9 +30,10 @@ public partial class CombatReplayDb
     public Dictionary<string, CardStats> MostLikedCard { get; init; } = [];
     public Dictionary<string, CardStats> MostIgnoredCard { get; init; } = [];
      
-    public void AddBlockGainedByCard(string cardTitle, int amount)
+    public void AddBlockGainedByCard(CardModel card, int amount)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
+        var (cardStats, cardTitle) = GetOrCreateCardStats(card);
+        
         cardStats.TotalBlockGained += amount;
 
         if (BestDefend.Count == 0 || cardStats.TotalBlockGained > BestDefend.Values.First().TotalBlockGained)
@@ -37,9 +48,9 @@ public partial class CombatReplayDb
         }
     }
 
-    public void AddDamageDealtByCard(string cardTitle, int amount)
+    public void AddDamageDealtByCard(CardModel card, int amount)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
+        var (cardStats, cardTitle) = GetOrCreateCardStats(card);
         cardStats.TotalDamageDealt += amount;
 
         if (BestAttack.Count == 0 || cardStats.TotalDamageDealt > BestAttack.Values.First().TotalDamageDealt)
@@ -54,35 +65,36 @@ public partial class CombatReplayDb
         }
     }
 
-    public void OnCardAddedToHand(string cardTitle)
+    public void OnCardAddedToHand(CardModel card)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
+        var (cardStats, cardTitle) = GetOrCreateCardStats(card);
         cardStats.TimesAddedToHand++;
         UpdatePlayFromHandRatio(cardTitle, cardStats);
     }
 
-    public void OnCardCreated(string cardTitle, bool addedByPlayer, bool addedToHand)
+    public void OnCardCreated(CardModel card, bool addedByPlayer, bool addedToHand)
     {
-        if (addedToHand) OnCardAddedToHand(cardTitle);
+        if (addedToHand) OnCardAddedToHand(card);
         if (addedByPlayer) TotalCardsCreated++;
     }
 
-    public void OnCardDiscarded(string cardTitle)
+    public void OnCardDiscarded(CardModel card)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
+        var (cardStats, _) = GetOrCreateCardStats(card);
         cardStats.TimesDiscarded++;
         TotalCardsDiscarded++;
     }
 
-    public void OnCardDrawn(string cardTitle)
+    public void OnCardDrawn(CardModel card)
     {
         TotalCardsDrawn++;
-        OnCardAddedToHand(cardTitle);
+        OnCardAddedToHand(card);
     }
 
-    public void OnExecuteCard(string cardTitle)
+    public void OnExecuteCard(CardModel card)
     {
-        var cardStats = GetOrCreateCardStats(cardTitle);
+        var (cardStats, cardTitle) = GetOrCreateCardStats(card);
+        
         cardStats.TimesPlayed++;
         TotalCardsPlayed++;
         
@@ -98,19 +110,34 @@ public partial class CombatReplayDb
         _prevCardPlay = cardTitle;
     }
 
-    private CardStats GetOrCreateCardStats(string cardTitle)
+    private (CardStats, string) GetOrCreateCardStats(CardModel card)
     {
-        cardTitle = TitleToKey(cardTitle);
-        if (CardPlayStats.TryGetValue(cardTitle, out var stats)) return stats;
-        stats = new CardStats();
+        var cardTitle = TitleToKey(card.Title);
+        if (CardPlayStats.TryGetValue(cardTitle, out var stats)) return (stats, card.Title);
+        
+        stats = new CardStats()
+        {
+            IsUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable),
+        };
+        
         CardPlayStats[cardTitle] = stats;
-        return stats;
+        
+        return (stats, card.Title);
     }
     
     private void UpdateCardStats()
     {
-        BestSingleDamage = Math.Max(BestSingleDamage, _currentAttackDamage);
-        BestSingleBlock = Math.Max(BestSingleBlock, _currentDefenseBlock);
+        if (_currentAttackDamage > (int)BestSingleDamage["Damage"])
+        {
+            BestSingleDamage["Title"] = _prevCardPlay;
+            BestSingleDamage["Damage"] = _currentAttackDamage;
+        }
+
+        if (_currentDefenseBlock > (int)BestSingleBlock["Block"])
+        {
+            BestSingleBlock["Title"] = _prevCardPlay;
+            BestSingleBlock["Block"] = _currentDefenseBlock;
+        }
 
         _currentAttackDamage = 0;
         _currentDefenseBlock = 0;
@@ -122,6 +149,8 @@ public partial class CombatReplayDb
         {
             cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         }
+
+        if (cardStats.IsUnplayable) return;
 
         if (MostLikedCard.Count == 0 || cardStats.PlayFromHandRatio > MostLikedCard.Values.First().PlayFromHandRatio)
         {

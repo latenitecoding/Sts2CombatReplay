@@ -13,10 +13,10 @@ public partial class CombatReplayTracker
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
-        WriteIt($"==Combat {_db.CurrentCombat} **ended**==");
+        WriteIt($"==Combat {_db.FinalCombat} **ended**==");
         _db.OnEndCombat();
     
-        MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.CurrentCombat}");
+        MainFile.Logger.Info($"CombatReplay logging stats for combat {_db.FinalCombat}");
         _db.InProgressSave();
 
         _logger?.OnCombatEnd();
@@ -26,7 +26,7 @@ public partial class CombatReplayTracker
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
-        WriteIt($"==Combat {_db.CurrentCombat} **was** `victory`==");
+        WriteIt($"==Combat {_db.FinalCombat} **was** `victory`==");
         return Task.CompletedTask;
     }
     
@@ -55,11 +55,7 @@ public partial class CombatReplayTracker
         
         foreach (var creature in _db.GetCombatCreatureList())
         {
-            if (creature.IsDead)
-            {
-                WriteIt($"> {FormatCreature(creature)} **defeated**");
-                continue;
-            }
+            if (creature.IsDead) continue;
             
             var powers = string.Join(", ", creature.Powers.Select(FormatPower));
             WriteIt($"> {FormatCreature(creature)} **active** [{powers}] powers");
@@ -89,7 +85,7 @@ public partial class CombatReplayTracker
     public override Task BeforeCombatStart()
     {
         _db.OnStartCombat();
-        WriteIt($"==Combat {_db.CurrentCombat} **started**==");
+        WriteIt($"==Combat {_db.FinalCombat} **started**==");
         
         return Task.CompletedTask;
     }

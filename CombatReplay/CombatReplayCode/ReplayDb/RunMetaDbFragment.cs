@@ -5,13 +5,14 @@ public partial class CombatReplayDb
     public string? RunSeed { get; set; }
     public bool IsMultiplayer { get; set; }
     public string? AscensionLevel { get; set; }
-    public int CurrentAct { get; set; }
-    public int CurrentRoom { get; set; }
-    public int CurrentCombat { get; set; }
+    
+    public int FinalAct { get; set; }
+    public int FinalRoom { get; set; }
+    public int FinalCombat { get; set; }
     
     public int TotalPotionsDiscarded { get; set; }
     public int TotalHpHealed { get; set; }
     
-    public void NextAct() => CurrentAct += 1;
-    public void NextRoom() => CurrentRoom += 1;
+    public void NextAct() => FinalAct += 1;
+    public void NextRoom() => FinalRoom += 1;
 }

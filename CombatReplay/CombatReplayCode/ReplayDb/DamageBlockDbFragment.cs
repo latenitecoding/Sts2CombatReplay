@@ -69,7 +69,7 @@ public partial class CombatReplayDb
         
         if (cardSource != null)
         {
-            AddBlockGainedByCard(cardSource.Title, amount);
+            AddBlockGainedByCard(cardSource, amount);
         }
         else
         {
@@ -99,7 +99,7 @@ public partial class CombatReplayDb
         }       
         if (cardSource != null && LocalContext.IsMe(cardSource.Owner))
         {
-            AddDamageDealtByCard(cardSource.Title, totalDamage);
+            AddDamageDealtByCard(cardSource, totalDamage);
         }
         else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
         {

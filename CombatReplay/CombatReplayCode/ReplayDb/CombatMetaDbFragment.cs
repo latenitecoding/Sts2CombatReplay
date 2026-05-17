@@ -21,6 +21,7 @@ public partial class CombatReplayDb
     public int TotalSummoned { get; set; }
     public int TotalOrbsChanneled { get; set; }
     public int TotalOrbsEvoked { get; set; }
+    
     public int CurrentTurn { get; set; }
     private bool _inCombat;
     
@@ -66,11 +67,11 @@ public partial class CombatReplayDb
 
     public void OnStartCombat()
     {
-        CurrentCombat += 1;
+        FinalCombat += 1;
         CurrentTurn = 0;
         _inCombat = true;
 
-        _currentCombat.CombatId = CurrentCombat;
+        _currentCombat.CombatId = FinalCombat;
     }
 
     private void UpdateTurnStats()
