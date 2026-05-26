@@ -1,4 +1,5 @@
 using CombatReplay.CombatReplayCode.Utils;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
 
@@ -35,7 +36,9 @@ public partial class CombatReplayTracker
         // in case OnRoomEntered is ever called twice in a row
         else if (CheckIt(ReplayLogger.MsgType.RoomEntered)) return;
         
-        _db.NextRoom();
+        var numRooms = RunManager.Instance.History?.MapPointHistory[0].Count ?? -1;
+        if (numRooms < 0 || _db.FinalRoom < numRooms) _db.NextRoom();
+        
         BufferIt(
             $"### Room {_db.FinalRoom} **entered**",
             ReplayLogger.MsgType.RoomEntered,

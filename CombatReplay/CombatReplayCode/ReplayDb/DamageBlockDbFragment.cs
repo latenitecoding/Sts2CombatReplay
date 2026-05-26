@@ -96,10 +96,18 @@ public partial class CombatReplayDb
                     TotalSelfDamage += totalDamage;
                 }
             }
+
+            if (cardSource != null && LocalContext.IsMe(cardSource.Owner))
+            {
+                AddDamageDealtByCard(cardSource, totalDamage, isSelfDamage: true);
+            }
+
+            return;
         }       
+        
         if (cardSource != null && LocalContext.IsMe(cardSource.Owner))
         {
-            AddDamageDealtByCard(cardSource, totalDamage);
+            AddDamageDealtByCard(cardSource, totalDamage, isSelfDamage: false);
         }
         else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
         {

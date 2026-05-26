@@ -48,9 +48,16 @@ public partial class CombatReplayDb
         }
     }
 
-    public void AddDamageDealtByCard(CardModel card, int amount)
+    public void AddDamageDealtByCard(CardModel card, int amount, bool isSelfDamage = false)
     {
         var (cardStats, cardTitle) = GetOrCreateCardStats(card);
+
+        if (isSelfDamage)
+        {
+            cardStats.TotalSelfDamageDealt += amount;
+            return;
+        }
+        
         cardStats.TotalDamageDealt += amount;
 
         if (BestAttack.Count == 0 || cardStats.TotalDamageDealt > BestAttack.Values.First().TotalDamageDealt)
@@ -117,6 +124,7 @@ public partial class CombatReplayDb
         
         stats = new CardStats()
         {
+            ModelId = card.Id.ToString(),
             IsUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable),
         };
         
