@@ -12,17 +12,9 @@ public partial class CombatReplayDb
     private int _currentAttackDamage;
     private int _currentDefenseBlock;
 
-    public Dictionary<string, object> BestSingleDamage { get; set; } = new()
-    {
-        ["Title"] = "",
-        ["Damage"] = 0,
-    };
+    public BestOfStat? BestSingleDamage { get; set; }
 
-    public Dictionary<string, object> BestSingleBlock { get; set; } = new()
-    {
-        ["Title"] = "",
-        ["Block"] = 0,
-    };
+    public BestOfStat? BestSingleBlock { get; set; }
 
     public Dictionary<string, CardStats> BestAttack { get; init; } = [];
     public Dictionary<string, CardStats> BestDefend { get; init; } = [];
@@ -135,16 +127,32 @@ public partial class CombatReplayDb
     
     private void UpdateCardStats()
     {
-        if (_currentAttackDamage > (int)BestSingleDamage["Damage"])
+        if (BestSingleDamage is null)
         {
-            BestSingleDamage["Title"] = _prevCardPlay;
-            BestSingleDamage["Damage"] = _currentAttackDamage;
+            BestSingleDamage = new BestOfStat()
+            {
+                Title = _prevCardPlay,
+                Amount = _currentAttackDamage,
+            };
+        }
+        else if (_currentAttackDamage > BestSingleDamage.Amount)
+        {
+            BestSingleDamage.Title = _prevCardPlay;
+            BestSingleDamage.Amount = _currentAttackDamage;
         }
 
-        if (_currentDefenseBlock > (int)BestSingleBlock["Block"])
+        if (BestSingleBlock is null)
         {
-            BestSingleBlock["Title"] = _prevCardPlay;
-            BestSingleBlock["Block"] = _currentDefenseBlock;
+            BestSingleBlock = new BestOfStat()
+            {
+                Title = _prevCardPlay,
+                Amount = _currentDefenseBlock,
+            };
+        }
+        else if (_currentDefenseBlock > BestSingleBlock.Amount)
+        {
+            BestSingleBlock.Title = _prevCardPlay;
+            BestSingleBlock.Amount = _currentDefenseBlock;
         }
 
         _currentAttackDamage = 0;

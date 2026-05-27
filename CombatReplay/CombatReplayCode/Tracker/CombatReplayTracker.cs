@@ -117,7 +117,8 @@ public partial class CombatReplayTracker : AbstractModel
         
         if (_runSeed != null) WriteIt($"- Run Seed: `{_runSeed}`");
         
-        WriteIt($"- Mod Version: `{MainFile.Version}`");
+        WriteIt($"- Game Version: `{MainFile.GameVersion}`");
+        WriteIt($"- Mod Version: `{MainFile.ModVersion}`");
     }
 
     public void OnRunEnd(long startTime)

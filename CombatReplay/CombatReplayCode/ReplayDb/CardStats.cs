@@ -2,7 +2,7 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public class CardStats
 {
-    public required string ModelId { get; set; }
+    public string ModelId { get; set; }
     
     public int TimesPlayed { get; set; }
     public int TimesAddedToHand { get; set; }
