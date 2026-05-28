@@ -178,7 +178,7 @@ public partial class CombatReplayTracker
         }
         
         if (!LocalContext.IsMe(card.Owner)) return;
-        _db.OnExecuteCard(card);
+        _db.OnExecuteCard(card, isAutoPlayed: true);
     }
 
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)

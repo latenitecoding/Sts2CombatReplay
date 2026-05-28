@@ -2,14 +2,16 @@ namespace CombatReplay.CombatReplayCode.ReplayDb;
 
 public class CardStats
 {
-    public string ModelId { get; set; }
+    public required string ModelId { get; set; }
     
-    public int TimesPlayed { get; set; }
+    public int TimesPlayedByPlayer { get; set; }
+    public int TimesAutoPlayed { get; set; }
+    
     public int TimesAddedToHand { get; set; }
     public int TimesDiscarded { get; set; }
     public bool IsUnplayable { get; init; }
     
-    public Decimal PlayFromHandRatio { get; set; }
+    public Decimal PlayedByPlayerRatio { get; set; }
     
     public int TotalDamageDealt { get; set; }
     public int TotalBlockGained { get; set; }

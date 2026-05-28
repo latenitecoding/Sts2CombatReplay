@@ -68,7 +68,7 @@ public partial class CombatReplayDb
     {
         var (cardStats, _) = GetOrCreateCardStats(card);
         cardStats.TimesAddedToHand++;
-        UpdatePlayFromHandRatio(cardStats);
+        UpdatePlayedByPlayerRatio(cardStats);
     }
 
     public void OnCardCreated(CardModel card, bool addedByPlayer, bool addedToHand)
@@ -90,20 +90,28 @@ public partial class CombatReplayDb
         OnCardAddedToHand(card);
     }
 
-    public void OnExecuteCard(CardModel card)
+    public void OnExecuteCard(CardModel card, bool isAutoPlayed = false)
     {
         var (cardStats, cardTitle) = GetOrCreateCardStats(card);
-        
-        cardStats.TimesPlayed++;
-        TotalCardsPlayed++;
-        
-        if (MostPlayedCard.Count == 0 || cardStats.TimesPlayed > MostPlayedCard.Values.First().TimesPlayed)
-        {
-            MostPlayedCard.Clear();
-            MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
-        }
 
-        UpdatePlayFromHandRatio(cardStats);
+        if (isAutoPlayed)
+        {
+            cardStats.TimesAutoPlayed++;
+        }
+        else
+        {
+            cardStats.TimesPlayedByPlayer++;
+            TotalCardsPlayed++;
+
+            if (MostPlayedCard.Count == 0 ||
+                cardStats.TimesPlayedByPlayer > MostPlayedCard.Values.First().TimesPlayedByPlayer)
+            {
+                MostPlayedCard.Clear();
+                MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
+            }
+            
+            UpdatePlayedByPlayerRatio(cardStats);
+        }
        
         UpdateCardStats();
         _prevCardPlay = cardTitle;
@@ -165,24 +173,24 @@ public partial class CombatReplayDb
 
         var validCards = CardPlayStats.Keys
             .Select(TitleToKey)
-            .Where(key => CardPlayStats[key] is { TimesPlayed: > 1, IsUnplayable: false })
+            .Where(key => CardPlayStats[key] is { TimesPlayedByPlayer: > 1, IsUnplayable: false })
             .ToList();
         
         if (validCards.Count == 0) return;
         
-        var avgCardPlays = validCards.Average(key => CardPlayStats[key].TimesPlayed);
+        var avgCardPlays = validCards.Average(key => CardPlayStats[key].TimesPlayedByPlayer);
 
-        var bestPlayedCardKey = validCards.First(key => CardPlayStats[key].TimesPlayed >= avgCardPlays);
+        var bestPlayedCardKey = validCards.First(key => CardPlayStats[key].TimesPlayedByPlayer >= avgCardPlays);
         var bestPlayedCard = CardPlayStats[bestPlayedCardKey];
         
         foreach (var key in validCards)
         {
             var card =  CardPlayStats[key];
             
-            if (card.TimesPlayed < avgCardPlays) continue;
-            if (card.PlayFromHandRatio < bestPlayedCard.PlayFromHandRatio) continue;
-            if (card.PlayFromHandRatio == bestPlayedCard.PlayFromHandRatio &&
-                card.TimesPlayed <= bestPlayedCard.TimesPlayed) continue;
+            if (card.TimesPlayedByPlayer < avgCardPlays) continue;
+            if (card.PlayedByPlayerRatio < bestPlayedCard.PlayedByPlayerRatio) continue;
+            if (card.PlayedByPlayerRatio == bestPlayedCard.PlayedByPlayerRatio &&
+                card.TimesPlayedByPlayer <= bestPlayedCard.TimesPlayedByPlayer) continue;
 
             bestPlayedCardKey = key;
             bestPlayedCard = card;
@@ -192,21 +200,21 @@ public partial class CombatReplayDb
         MostLikedCard[bestPlayedCardKey] = bestPlayedCard;
         
         var lowerAverageCardPlays = validCards
-            .Where(key => CardPlayStats[key].TimesPlayed <= avgCardPlays)
-            .Average(key => CardPlayStats[key].TimesPlayed);
+            .Where(key => CardPlayStats[key].TimesPlayedByPlayer <= avgCardPlays)
+            .Average(key => CardPlayStats[key].TimesPlayedByPlayer);
        
         var worstPlayedCardKey = validCards
-            .First(key => lowerAverageCardPlays <= CardPlayStats[key].TimesPlayed && CardPlayStats[key].TimesPlayed <= avgCardPlays);
+            .First(key => lowerAverageCardPlays <= CardPlayStats[key].TimesPlayedByPlayer && CardPlayStats[key].TimesPlayedByPlayer <= avgCardPlays);
         var worstPlayedCard = CardPlayStats[worstPlayedCardKey];
         
         foreach (var key in validCards)
         {
             var card =  CardPlayStats[key];
             
-            if (card.TimesPlayed < lowerAverageCardPlays || card.TimesPlayed > avgCardPlays) continue;
-            if (card.PlayFromHandRatio > worstPlayedCard.PlayFromHandRatio) continue;
-            if (card.PlayFromHandRatio == worstPlayedCard.PlayFromHandRatio &&
-                card.TimesPlayed >= worstPlayedCard.TimesPlayed) continue;
+            if (card.TimesPlayedByPlayer < lowerAverageCardPlays || card.TimesPlayedByPlayer > avgCardPlays) continue;
+            if (card.PlayedByPlayerRatio > worstPlayedCard.PlayedByPlayerRatio) continue;
+            if (card.PlayedByPlayerRatio == worstPlayedCard.PlayedByPlayerRatio &&
+                card.TimesPlayedByPlayer >= worstPlayedCard.TimesPlayedByPlayer) continue;
 
             worstPlayedCardKey = key;
             worstPlayedCard = card;
@@ -216,11 +224,11 @@ public partial class CombatReplayDb
         MostIgnoredCard[worstPlayedCardKey] = worstPlayedCard;
     }
 
-    private void UpdatePlayFromHandRatio(CardStats cardStats)
+    private void UpdatePlayedByPlayerRatio(CardStats cardStats)
     {
         if (cardStats.TimesAddedToHand > 0)
         {
-            cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
+            cardStats.PlayedByPlayerRatio = Math.Round((decimal)cardStats.TimesPlayedByPlayer / cardStats.TimesAddedToHand, 2);
         }
     }
 
