@@ -136,8 +136,11 @@ public partial class CombatReplayTracker : AbstractModel
     public void UpdateSeed(string seed)
     {
         if (_runSeed != null) return;
+        
         _runSeed = seed;
         _db.RunSeed = seed;
+        
+        _db.InProgressSave();
     }
     
     private (bool ok, bool found) BufferBefore(string msg, ReplayLogger.MsgType msgType, ReplayLogger.MsgType preceding, ReplayLogger.MsgType expecting)
