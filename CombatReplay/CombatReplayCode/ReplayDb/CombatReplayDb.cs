@@ -40,12 +40,17 @@ public partial class CombatReplayDb
     public void InProgressSave()
     {
         if (_savePath == null) return;
+        
+        UpdateMostLikedIgnoredCards();
+        
         File.WriteAllText(_savePath, JsonSerializer.Serialize(this, JsonOptions));
     }
 
     public void OnRunEnd(long startTime)
     {
         if (!_profileId.HasValue || _saveFile == null || _savePath == null || !File.Exists(_savePath)) return;
+        
+        UpdateMostLikedIgnoredCards();
         
         File.WriteAllText(_savePath, JsonSerializer.Serialize(this, JsonOptions));
 

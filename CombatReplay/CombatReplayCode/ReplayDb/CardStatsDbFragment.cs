@@ -66,9 +66,9 @@ public partial class CombatReplayDb
 
     public void OnCardAddedToHand(CardModel card)
     {
-        var (cardStats, cardTitle) = GetOrCreateCardStats(card);
+        var (cardStats, _) = GetOrCreateCardStats(card);
         cardStats.TimesAddedToHand++;
-        UpdatePlayFromHandRatio(cardTitle, cardStats);
+        UpdatePlayFromHandRatio(cardStats);
     }
 
     public void OnCardCreated(CardModel card, bool addedByPlayer, bool addedToHand)
@@ -103,7 +103,7 @@ public partial class CombatReplayDb
             MostPlayedCard[TitleToKey(cardTitle)] = cardStats;
         }
 
-        UpdatePlayFromHandRatio(cardTitle, cardStats);
+        UpdatePlayFromHandRatio(cardStats);
        
         UpdateCardStats();
         _prevCardPlay = cardTitle;
@@ -159,26 +159,69 @@ public partial class CombatReplayDb
         _currentDefenseBlock = 0;
     }
 
-    private void UpdatePlayFromHandRatio(string cardTitle, CardStats cardStats)
+    private void UpdateMostLikedIgnoredCards()
+    {
+        if (CardPlayStats.Count == 0) return;
+
+        var validCards = CardPlayStats.Keys
+            .Select(TitleToKey)
+            .Where(key => CardPlayStats[key] is { TimesPlayed: > 1, IsUnplayable: false })
+            .ToList();
+        
+        if (validCards.Count == 0) return;
+        
+        var avgCardPlays = validCards.Average(key => CardPlayStats[key].TimesPlayed);
+
+        var bestPlayedCardKey = validCards.First(key => CardPlayStats[key].TimesPlayed >= avgCardPlays);
+        var bestPlayedCard = CardPlayStats[bestPlayedCardKey];
+        
+        foreach (var key in validCards)
+        {
+            var card =  CardPlayStats[key];
+            
+            if (card.TimesPlayed < avgCardPlays) continue;
+            if (card.PlayFromHandRatio < bestPlayedCard.PlayFromHandRatio) continue;
+            if (card.PlayFromHandRatio == bestPlayedCard.PlayFromHandRatio &&
+                card.TimesPlayed <= bestPlayedCard.TimesPlayed) continue;
+
+            bestPlayedCardKey = key;
+            bestPlayedCard = card;
+        }
+        
+        MostLikedCard.Clear();
+        MostLikedCard[bestPlayedCardKey] = bestPlayedCard;
+        
+        var lowerAverageCardPlays = validCards
+            .Where(key => CardPlayStats[key].TimesPlayed <= avgCardPlays)
+            .Average(key => CardPlayStats[key].TimesPlayed);
+       
+        var worstPlayedCardKey = validCards
+            .First(key => lowerAverageCardPlays <= CardPlayStats[key].TimesPlayed && CardPlayStats[key].TimesPlayed <= avgCardPlays);
+        var worstPlayedCard = CardPlayStats[worstPlayedCardKey];
+        
+        foreach (var key in validCards)
+        {
+            var card =  CardPlayStats[key];
+            
+            if (card.TimesPlayed < lowerAverageCardPlays || card.TimesPlayed > avgCardPlays) continue;
+            if (card.PlayFromHandRatio > worstPlayedCard.PlayFromHandRatio) continue;
+            if (card.PlayFromHandRatio == worstPlayedCard.PlayFromHandRatio &&
+                card.TimesPlayed >= worstPlayedCard.TimesPlayed) continue;
+
+            worstPlayedCardKey = key;
+            worstPlayedCard = card;
+        }
+
+        MostIgnoredCard.Clear();
+        MostIgnoredCard[worstPlayedCardKey] = worstPlayedCard;
+    }
+
+    private void UpdatePlayFromHandRatio(CardStats cardStats)
     {
         if (cardStats.TimesAddedToHand > 0)
         {
             cardStats.PlayFromHandRatio = Math.Round((decimal)cardStats.TimesPlayed / cardStats.TimesAddedToHand, 2);
         }
-
-        if (cardStats.IsUnplayable) return;
-
-        if (MostLikedCard.Count == 0 || cardStats.PlayFromHandRatio > MostLikedCard.Values.First().PlayFromHandRatio)
-        {
-            MostLikedCard.Clear();
-            MostLikedCard[TitleToKey(cardTitle)] = cardStats;
-        }
-
-        if (MostIgnoredCard.Count == 0 || cardStats.PlayFromHandRatio < MostIgnoredCard.Values.First().PlayFromHandRatio)
-        {
-            MostIgnoredCard.Clear();
-            MostIgnoredCard[TitleToKey(cardTitle)] = cardStats;
-        }   
     }
 
     private static readonly Regex TitleToKeyRegex = new(@"\+\d*$", RegexOptions.Compiled);
