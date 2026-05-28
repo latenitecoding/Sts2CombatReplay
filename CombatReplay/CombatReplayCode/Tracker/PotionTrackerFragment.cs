@@ -10,8 +10,10 @@ public partial class CombatReplayTracker
     public override Task AfterPotionDiscarded(PotionModel potion)
     {
         if (!LocalContext.IsMe(potion.Owner)) return Task.CompletedTask;
+        
         WriteIt($"> =={FormatPlayer(potion.Owner)} **discarded** {FormatPotion(potion)}==");
         _db.TotalPotionsDiscarded++;
+        
         return Task.CompletedTask;
     }
     
@@ -20,7 +22,7 @@ public partial class CombatReplayTracker
         // unlike other events, this should be triggered for all players so that we can see what potions other players are using
         WriteIt(target != null
             ? $"> =={FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)} **at** {FormatCreature(target)}=="
-            : $"> =={FormatPlayer(potion.Owner)} **threw** {FormatPotion(potion)}==");
+            : $"> =={FormatPlayer(potion.Owner)} **drank** {FormatPotion(potion)}==");
 
         if (LocalContext.IsMe(potion.Owner)) _db.TotalPotionsUsed++;
         return Task.CompletedTask;
