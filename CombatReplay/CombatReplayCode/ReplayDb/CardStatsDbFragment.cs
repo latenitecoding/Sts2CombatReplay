@@ -122,10 +122,12 @@ public partial class CombatReplayDb
         var cardTitle = TitleToKey(card.Title);
         if (CardPlayStats.TryGetValue(cardTitle, out var stats)) return (stats, card.Title);
         
+        
         stats = new CardStats()
         {
             ModelId = card.Id.ToString(),
-            IsUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable),
+            IsPower = card.Type is CardType.Power,
+            IsUnplayable = card.Keywords.Any(keyword => keyword is CardKeyword.Unplayable),
         };
         
         CardPlayStats[cardTitle] = stats;

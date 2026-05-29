@@ -9,6 +9,8 @@ public class CardStats
     
     public int TimesAddedToHand { get; set; }
     public int TimesDiscarded { get; set; }
+    
+    public bool IsPower { get; init; }
     public bool IsUnplayable { get; init; }
     
     public Decimal PlayedByPlayerRatio { get; set; }
