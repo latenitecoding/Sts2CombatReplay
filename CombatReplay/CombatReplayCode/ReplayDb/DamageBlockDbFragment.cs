@@ -20,6 +20,7 @@ public partial class CombatReplayDb
     public int TotalDamageReceived { get; set; }
     public int TotalTrueDamageReceived { get; set; }
     public int TotalBlockedDamageReceived { get; set; }
+    public int TotalOverkillDamage { get; set; }
     
     public int TotalSelfDamage { get; set; }
     
@@ -33,32 +34,26 @@ public partial class CombatReplayDb
         TotalDamage += totalDamage;
         _currentTurnDamage += totalDamage;
         _currentCombat.TotalDamageDealt += totalDamage;
-        if (trueDamage.HasValue)
-        {
-            TotalTrueDamage += trueDamage.Value;
-            _currentCombat.TotalTrueDamageDealt += trueDamage.Value;
-        }
-
-        if (!blockedDamage.HasValue) return;
         
-        TotalBlockedDamage += blockedDamage.Value;
-        _currentCombat.TotalBlockedDamageDealt += blockedDamage.Value;
+        TotalTrueDamage += trueDamage ?? 0;
+        _currentCombat.TotalTrueDamageDealt += trueDamage ?? 0;
+
+        TotalBlockedDamage += blockedDamage ?? 0;
+        _currentCombat.TotalBlockedDamageDealt += blockedDamage ?? 0;
+
+        TotalOverkillDamage += totalDamage - (trueDamage ?? 0) - (blockedDamage ?? 0);
     }
 
     public void AddCombatDamageReceived(int totalDamage, int? trueDamage, int? blockedDamage)
     {
         TotalDamageReceived += totalDamage;
         _currentCombat.TotalDamageReceived += totalDamage;
-        if (trueDamage.HasValue)
-        {
-            TotalTrueDamageReceived += trueDamage.Value;
-            _currentCombat.TotalTrueDamageReceived += trueDamage.Value;
-        }
-
-        if (!blockedDamage.HasValue) return;
         
-        TotalBlockedDamageReceived += blockedDamage.Value;
-        _currentCombat.TotalBlockedDamageReceived += blockedDamage.Value;
+        TotalTrueDamageReceived += trueDamage ?? 0;
+        _currentCombat.TotalTrueDamageReceived += trueDamage ?? 0;
+
+        TotalBlockedDamageReceived += blockedDamage ?? 0;
+        _currentCombat.TotalBlockedDamageReceived += blockedDamage ?? 0;
     }
 
     public void AddCombatBlockGained(CardModel? cardSource, int amount)
