@@ -9,6 +9,7 @@ public class CardStats
     
     public int TimesAddedToHand { get; set; }
     public int TimesDiscarded { get; set; }
+    public int TimesExhausted { get; set; }
     
     public bool IsPower { get; init; }
     public bool IsUnplayable { get; init; }

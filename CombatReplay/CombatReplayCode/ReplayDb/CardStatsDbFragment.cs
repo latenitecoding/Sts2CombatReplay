@@ -90,6 +90,12 @@ public partial class CombatReplayDb
         OnCardAddedToHand(card);
     }
 
+    public void OnCardExhausted(CardModel card)
+    {
+        var (cardStats, _) = GetOrCreateCardStats(card);
+        cardStats.TimesExhausted++;
+    }
+
     public void OnExecuteCard(CardModel card, bool isAutoPlayed = false)
     {
         var (cardStats, cardTitle) = GetOrCreateCardStats(card);

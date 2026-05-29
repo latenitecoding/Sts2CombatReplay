@@ -104,6 +104,8 @@ public partial class CombatReplayTracker
         
         _db.TotalCardsExhausted++;
         WriteIt($"> {FormatPlayer(card.Owner)} **exhausted** {FormatCard(card)}");
+
+        _db.OnCardExhausted(card);
         
         return Task.CompletedTask;
     }
