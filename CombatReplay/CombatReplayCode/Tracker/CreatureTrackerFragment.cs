@@ -123,17 +123,18 @@ public partial class CombatReplayTracker
         var shownHp = (creature is not { HpDisplay: HpDisplay.Normal })
             ? "Inf/Inf"
             : $"{(isDefeated ? 0 : (currentHp >= 0 ? currentHp : creature.CurrentHp))}/{(maxHp >= 0 ? maxHp : creature.MaxHp)}";
+        
         var creatureName = creature.Name.Replace("#", "\\#");
-        return (creature.CombatId != null)
-            ? $"`{creatureName}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
-            : $"`{creatureName}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
+        
+        return creature is not { Player: null }
+            ? $"`{creatureName}` (`{creature.Player.NetId}`) [`{creature.Block}|{shownHp}` bHP]"
+            : (creature.CombatId != null)
+                ? $"`{creatureName}` (`{creature.CombatId}`) [`{creature.Block}|{shownHp}` bHP]"
+                : $"`{creatureName}` (`{creature.ModelId}`) [`{creature.Block}|{shownHp}` bHP]";
     }
     
     private static string FormatPlayer(Player player)
     {
-        if (LocalContext.IsMe(player)) return "I";
-        return (player.Creature.CombatId != null)
-            ? $"{player.Character.Title.GetFormattedText()} (`{player.Creature.CombatId}`)"
-            : $"{player.Character.Title.GetFormattedText()} (`{player.NetId}`)";
+        return LocalContext.IsMe(player) ? "I" : $"{player.Character.Title.GetFormattedText()} (`{player.NetId}`)";
     }
 }

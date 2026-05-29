@@ -166,6 +166,8 @@ public partial class CombatReplayTracker
                 ReplayLogger.MsgType.CardPlayed,
                 overwriting: ReplayLogger.MsgType.CardPlayed,
                 expecting: ReplayLogger.MsgType.CardAdded);
+            
+            _db.OnExecuteCard(card, isAutoPlayed: true);
         }
         else
         {
@@ -176,9 +178,6 @@ public partial class CombatReplayTracker
                 overwriting: ReplayLogger.MsgType.CardPlayed,
                 expecting: ReplayLogger.MsgType.CardAdded);
         }
-        
-        if (!LocalContext.IsMe(card.Owner)) return;
-        _db.OnExecuteCard(card, isAutoPlayed: true);
     }
 
     public void OnCardAdded(Player owner, CardModel card, PileType pileType)
@@ -218,7 +217,8 @@ public partial class CombatReplayTracker
             ReplayLogger.MsgType.CardAdded,
             overwriting: ReplayLogger.MsgType.None,
             expecting: ReplayLogger.MsgType.CardAdded | ReplayLogger.MsgType.CardDrawn | ReplayLogger.MsgType.CardEntering | ReplayLogger.MsgType.PlayerOrEnemyWasHit | ReplayLogger.MsgType.PowerApplied | ReplayLogger.MsgType.TookDamage);
-        _db.OnCardAddedToHand(card);
+        
+        if (pileType is PileType.Hand) _db.OnCardAddedToHand(card);
     }
     
     public void OnExecuteCard(PlayCardAction action)
