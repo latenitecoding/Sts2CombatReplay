@@ -31,7 +31,7 @@ public partial class CombatReplayTracker : AbstractModel
         _multiplayerStartTime = startTime;
     }
     
-    public void OnRunStart()
+    public void OnRunStart(RunState state)
     {
         MainFile.Logger.Info($"CombatReplay tracking started");
 
@@ -119,6 +119,19 @@ public partial class CombatReplayTracker : AbstractModel
         
         WriteIt($"- Game Version: `{MainFile.GameVersion}`");
         WriteIt($"- Mod Version: `{MainFile.ModVersion}`");
+
+        var me = LocalContext.GetMe(state.Players);
+
+        if (me is null) return;
+        
+        var creatureName = me.Creature.Name.Replace("#", "\\#");
+        WriteIt($"==I'm playing as `{creatureName}`== <!-- THIS IS ME -->");
+
+        WriteIt($"==My starter deck includes:==");
+        foreach (var card in me.Deck.Cards)
+        {
+            WriteIt($"> {FormatCard(card)}");
+        }
     }
 
     public void OnRunEnd(long startTime)
