@@ -162,14 +162,14 @@ public partial class CombatReplayTracker
         var dealer = card.Owner;
         if (LocalContext.IsMe(dealer))
         {
-            BufferIt(target != null
+            var (_, found) = BufferIt(target != null
                 ? $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)} **targeting** {FormatCreature(target)}=="
                 : $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)}==",
                 ReplayLogger.MsgType.CardPlayed,
                 overwriting: ReplayLogger.MsgType.CardPlayed,
                 expecting: ReplayLogger.MsgType.CardAdded);
             
-            _db.OnExecuteCard(card, isAutoPlayed: true);
+            if (!found) _db.OnExecuteCard(card, isAutoPlayed: true);
         }
         else
         {
@@ -209,6 +209,8 @@ public partial class CombatReplayTracker
                 ReplayLogger.MsgType.CardPlayed,
                 overwriting: ReplayLogger.MsgType.None,
                 expecting: ReplayLogger.MsgType.CardPlayed);
+            
+            _db.OnExecuteCard(card, isAutoPlayed: true);
             return;
         }
 
