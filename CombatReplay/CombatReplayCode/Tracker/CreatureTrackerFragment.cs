@@ -1,6 +1,7 @@
 using CombatReplay.CombatReplayCode.Utils;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Gold;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -100,6 +101,18 @@ public partial class CombatReplayTracker
     public void OnCreatureStunned(Creature creature)
     {
         WriteIt($"> {FormatCreature(creature)} **stunned**");
+    }
+
+    public void OnGoldGained(Player player, int amount, bool wasStolenBack)
+    {
+        if (!_db.IsInCombat() || !LocalContext.IsMe(player)) return;
+        WriteIt($"> {FormatPlayer(player)} **gained** `{amount}`{(wasStolenBack ? " (Stolen Back)" : "")} gold");
+    }
+
+    public void OnGoldLost(Player player, int amount, GoldLossType goldLossType)
+    {
+        if (!_db.IsInCombat() || !LocalContext.IsMe(player)) return;
+        WriteIt($"> {FormatPlayer(player)} **lost** `{amount}` gold **because** `{goldLossType.ToString()}`");
     }
 
     public void OnRollMove(Creature owner, MoveState state)
