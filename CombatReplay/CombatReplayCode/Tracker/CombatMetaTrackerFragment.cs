@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Rooms;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -119,6 +120,17 @@ public partial class CombatReplayTracker
         {
             case CombatSide.Player:
                 WriteIt("==Player Phase **ended**==");
+
+                foreach (var creature in participants)
+                {
+                    if (!creature.IsEnemy) continue;
+                    
+                    var poisonPower = creature.Powers.FirstOrDefault(power => power is PoisonPower, null);
+                    if (poisonPower is null) continue;
+
+                    _db.OnPoisonDamageDealt(creature, poisonPower.Amount);
+                }
+                
                 break;
             case CombatSide.Enemy:
                 WriteIt("==Enemy Phase **ended**==");

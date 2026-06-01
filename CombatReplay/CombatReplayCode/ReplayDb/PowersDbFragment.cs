@@ -25,23 +25,28 @@ public partial class CombatReplayDb
         
         if (power is StrengthPower && (imTargeted || isMyCard))
         {
-            TotalStrengthGained += (int) amount;
+            TotalStrengthGained += (int)amount;
+            if (_inCombat) _currentCombat.TotalStrengthGained += (int)amount;
         }
         else if (power is VulnerablePower && target.IsEnemy && iApplied)
         {
-            TotalVulnerableApplied += (int) amount;
+            TotalVulnerableApplied += (int)amount;
+            if (_inCombat) _currentCombat.TotalVulnerableApplied += (int)amount;
         }
         else if (power is WeakPower && target.IsEnemy && iApplied)
         {
-            TotalWeakApplied += (int) amount;
+            TotalWeakApplied += (int)amount;
+            if (_inCombat) _currentCombat.TotalWeakApplied += (int)amount;
         }
         else if (power is PoisonPower && target.IsEnemy && iApplied)
         {
-            TotalPoisonApplied += (int) amount;
+            TotalPoisonApplied += (int)amount;
+            if (_inCombat) _currentCombat.TotalPoisonApplied += (int)amount;
         }
         else if (power is DoomPower && target.IsEnemy && iApplied)
         {
-            TotalDoomApplied += (int) amount;
+            TotalDoomApplied += (int)amount;
+            if (_inCombat) _currentCombat.TotalDoomApplied += (int)amount;
         }
 
         if (imTargeted && isMyCard) TotalPowersAppliedToSelf++;

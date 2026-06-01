@@ -15,12 +15,13 @@ public partial class CombatReplayDb
     public int TotalDamage { get; set; }
     public int TotalTrueDamage { get; set; }
     public int TotalBlockedDamage { get; set; }
+    public int TotalOverkillDamage { get; set; }
+    public int TotalPoisonDamage { get; set; }
     
     public int TotalBlockGained { get; set; }
     public int TotalDamageReceived { get; set; }
     public int TotalTrueDamageReceived { get; set; }
     public int TotalBlockedDamageReceived { get; set; }
-    public int TotalOverkillDamage { get; set; }
     
     public int TotalSelfDamage { get; set; }
     
@@ -42,6 +43,7 @@ public partial class CombatReplayDb
         _currentCombat.TotalBlockedDamageDealt += blockedDamage ?? 0;
 
         TotalOverkillDamage += totalDamage - (trueDamage ?? 0) - (blockedDamage ?? 0);
+        _currentCombat.TotalOverkillDamageDealt += totalDamage - (trueDamage ?? 0) - (blockedDamage ?? 0);
     }
 
     public void AddCombatDamageReceived(int totalDamage, int? trueDamage, int? blockedDamage)
@@ -109,5 +111,15 @@ public partial class CombatReplayDb
             TotalRelicPowerOrbDamage += totalDamage;
             AddCombatDamageDealt(dealer, target, totalDamage, trueDamage, blockedDamage);
         }
+    }
+
+    public void OnPoisonDamageDealt(Creature creature, int amount)
+    {
+        TotalPoisonDamage += amount;
+        _currentCombat.TotalPoisonDamageDealt += amount;
+        
+        TotalDamage += amount;
+        _currentTurnDamage += amount;
+        _currentCombat.TotalDamageDealt += amount;
     }
 }
