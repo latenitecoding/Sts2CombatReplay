@@ -224,6 +224,22 @@ public partial class CombatReplayTracker
         
         if (pileType is PileType.Hand) _db.OnCardAddedToHand(card);
     }
+
+    public void OnCardGainsKeywords(CardModel card, bool isSingleTurn, params CardKeyword[] keywords)
+    {
+        var gainedKeywords = string.Join(", ", keywords.Select(keyword => $"`{keyword}`{(isSingleTurn ? " (1 Turn)" : "")}"));
+        if (gainedKeywords.Length > 0) return;
+
+        WriteIt($"> {FormatCard(card)} **gained** k[{gainedKeywords}]");
+    }
+
+    public void OnCardLosesKeywords(CardModel card, bool isSingleTurn, params CardKeyword[] keywords)
+    {
+        var lostKeywords = string.Join(", ", keywords.Select(keyword => $"`{keyword}`{(isSingleTurn ? " (1 Turn)" : "")}"));
+        if (lostKeywords.Length > 0) return;
+
+        WriteIt($"> {FormatCard(card)} **lost** k[{lostKeywords}]");
+    }
     
     public void OnExecuteCard(PlayCardAction action)
     {
