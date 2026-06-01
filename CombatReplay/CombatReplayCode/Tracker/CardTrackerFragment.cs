@@ -316,7 +316,7 @@ public partial class CombatReplayTracker
         var replayEntry = (replayCount > 0) ? $"`Replay {replayCount}`" : "";
         if (replayEntry.Length > 0) sb.Append($" r[{replayEntry}]");
         
-        var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.Canonical.ToString();
+        var energyCost = (card.EnergyCost.CostsX) ? "X" : card.EnergyCost.GetAmountToSpend().ToString();
         var starCost = (card.HasStarCostX) ? "X" : card.CurrentStarCost.ToString();
 
         var isUnplayable = card.Keywords.Any(keyword => keyword == CardKeyword.Unplayable);
