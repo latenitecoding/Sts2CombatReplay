@@ -107,6 +107,7 @@ public partial class CombatReplayDb
         else if (cardSource == null && dealer != null && LocalContext.IsMe(dealer.Player))
         {
             TotalRelicPowerOrbDamage += totalDamage;
+            AddCombatDamageDealt(dealer, target, totalDamage, trueDamage, blockedDamage);
         }
     }
 }
