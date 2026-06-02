@@ -18,11 +18,16 @@ public partial class CombatReplayDb
     public int TotalOverkillDamage { get; set; }
     public int TotalPoisonDamage { get; set; }
     
+    public List<int> TotalDamageByAct { get; set; } = [];
+    
     public int TotalBlockGained { get; set; }
     public int TotalDamageReceived { get; set; }
     public int TotalTrueDamageReceived { get; set; }
     public int TotalBlockedDamageReceived { get; set; }
-    
+
+    public List<int> TotalDamageReceivedByAct { get; set; } = [];
+    public List<int> TotalBlockByAct { get; set; } = [];
+
     public int TotalSelfDamage { get; set; }
     
     private int _currentTurnDamage;
@@ -44,6 +49,17 @@ public partial class CombatReplayDb
 
         TotalOverkillDamage += totalDamage - (trueDamage ?? 0) - (blockedDamage ?? 0);
         _currentCombat.TotalOverkillDamageDealt += totalDamage - (trueDamage ?? 0) - (blockedDamage ?? 0);
+
+        var currentAct = Math.Max(FinalAct, 1);
+
+        if (TotalDamageByAct.Count < currentAct)
+        {
+            TotalDamageByAct.Add(totalDamage);
+        }
+        else
+        {
+            TotalDamageByAct[currentAct] += totalDamage;
+        }
     }
 
     public void AddCombatDamageReceived(int totalDamage, int? trueDamage, int? blockedDamage)
@@ -56,6 +72,17 @@ public partial class CombatReplayDb
 
         TotalBlockedDamageReceived += blockedDamage ?? 0;
         _currentCombat.TotalBlockedDamageReceived += blockedDamage ?? 0;
+
+        var currentAct = Math.Max(FinalAct, 1);
+
+        if (TotalDamageReceivedByAct.Count < currentAct)
+        {
+            TotalDamageReceivedByAct.Add(totalDamage);
+        }
+        else
+        {
+            TotalDamageReceivedByAct[currentAct] += totalDamage;
+        }
     }
 
     public void AddCombatBlockGained(CardModel? cardSource, int amount)
@@ -71,6 +98,17 @@ public partial class CombatReplayDb
         else
         {
             TotalRelicPowerOrbBlock += amount;
+        }
+
+        var currentAct = Math.Max(FinalAct, 1);
+
+        if (TotalBlockByAct.Count < currentAct)
+        {
+            TotalBlockByAct.Add(amount);
+        }
+        else
+        {
+            TotalBlockByAct[currentAct] += amount;
         }
     }
 

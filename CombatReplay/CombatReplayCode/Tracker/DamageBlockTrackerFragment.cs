@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace CombatReplay.CombatReplayCode.Tracker;
@@ -63,7 +64,7 @@ public partial class CombatReplayTracker
                     ? $"> {FormatCreature(dealer)} **suffered** [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`]"
                     : $"> {FormatCreature(dealer)} **used** `{cardSource.Title}` [`Damage {result.BlockedDamage}|{result.UnblockedDamage}`] **against** {FormatCreature(target)}",
                 ReplayLogger.MsgType.TookDamage,
-                preceding: ReplayLogger.MsgType.BlockBroken,
+                preceding: ReplayLogger.MsgType.BlockBroken | ReplayLogger.MsgType.PowerApplied,
                 expecting: ReplayLogger.MsgType.PlayerOrEnemyWasHit | ReplayLogger.MsgType.PowerApplied);
         }
         else if (dealer is { IsPlayer: true })
@@ -147,6 +148,11 @@ public partial class CombatReplayTracker
         }
         
         if (permittedBlock + target.CurrentHp > (int) amount && !playerRpoHit)
+        {
+            return Task.CompletedTask;
+        }
+        
+        if (target.CurrentHp > 1 && target.Powers.Any(power => power is SlipperyPower))
         {
             return Task.CompletedTask;
         }

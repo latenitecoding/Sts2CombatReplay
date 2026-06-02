@@ -29,8 +29,8 @@ public partial class CombatReplayDb
     public int TotalPotionsUsed { get; set; }
     
     private CombatStats _currentCombat = new() { Enemies = [] };
-    public CombatStats? HeroicCombat { get; set; }
-    public CombatStats? NemesisCombat { get; set; }
+    public List<CombatStats> HeroicCombatByAct { get; set; } = [];
+    public List<CombatStats> NemesisCombatByAct { get; set; } = [];
     public List<CombatStats> Combats { get; init; } = [];
 
     public bool IsInCombat() => _inCombat;
@@ -43,13 +43,25 @@ public partial class CombatReplayDb
         UpdateAverages();
         
         Combats.Add(_currentCombat);
-        if (HeroicCombat == null || _currentCombat.TotalDamageDealt > HeroicCombat.TotalDamageDealt)
+
+        var currentAct = Math.Max(FinalAct, 1);
+        
+        if (HeroicCombatByAct.Count < currentAct)
         {
-            HeroicCombat = _currentCombat;
+            HeroicCombatByAct.Add(_currentCombat);
         }
-        if (NemesisCombat == null || _currentCombat.TotalTrueDamageReceived > NemesisCombat.TotalTrueDamageReceived)
+        else if (_currentCombat.TotalDamageDealt > HeroicCombatByAct[currentAct].TotalDamageDealt)
         {
-            NemesisCombat = _currentCombat;
+            HeroicCombatByAct[currentAct] = _currentCombat;
+        }
+
+        if (NemesisCombatByAct.Count < currentAct)
+        {
+            NemesisCombatByAct.Add(_currentCombat);
+        }
+        else if (_currentCombat.TotalTrueDamageReceived > NemesisCombatByAct[currentAct].TotalTrueDamageReceived)
+        {
+            NemesisCombatByAct[currentAct] = _currentCombat;
         }
         
         _currentCreatures.Clear();
