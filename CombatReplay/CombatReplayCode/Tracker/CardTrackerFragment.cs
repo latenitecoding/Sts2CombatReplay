@@ -165,9 +165,9 @@ public partial class CombatReplayTracker
             var (_, found) = BufferIt(target != null
                 ? $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)} **targeting** {FormatCreature(target)}=="
                 : $"> =={FormatPlayer(dealer)} **auto-played** {FormatCard(card)}==",
-                ReplayLogger.MsgType.CardPlayed,
-                overwriting: ReplayLogger.MsgType.CardPlayed,
-                expecting: ReplayLogger.MsgType.CardAdded);
+                ReplayLogger.MsgType.CardAutoPlayed,
+                overwriting: ReplayLogger.MsgType.CardAutoPlayed,
+                expecting: ReplayLogger.MsgType.CardAdded | ReplayLogger.MsgType.CardAutoPlayed);
             
             if (!found) _db.OnExecuteCard(card, isAutoPlayed: true);
         }
@@ -177,8 +177,8 @@ public partial class CombatReplayTracker
                 ? $"> --{FormatPlayer(dealer)} **auto-played** {FormatCard(card)} **targeting** {FormatCreature(target)}--"
                 : $"> --{FormatPlayer(dealer)} **auto-played** {FormatCard(card)}--",
                 ReplayLogger.MsgType.CardPlayed,
-                overwriting: ReplayLogger.MsgType.CardPlayed,
-                expecting: ReplayLogger.MsgType.CardAdded);
+                overwriting: ReplayLogger.MsgType.None,
+                expecting: ReplayLogger.MsgType.CardAdded |  ReplayLogger.MsgType.CardAutoPlayed);
         }
     }
 
@@ -206,9 +206,9 @@ public partial class CombatReplayTracker
         {
             BufferIt(
                 $"> =={FormatPlayer(owner)} **auto-played** {FormatCard(card)}==",
-                ReplayLogger.MsgType.CardPlayed,
-                overwriting: ReplayLogger.MsgType.None,
-                expecting: ReplayLogger.MsgType.CardPlayed);
+                ReplayLogger.MsgType.CardAutoPlayed,
+                overwriting: ReplayLogger.MsgType.CardAutoPlayed,
+                expecting: ReplayLogger.MsgType.CardAutoPlayed);
             
             _db.OnExecuteCard(card, isAutoPlayed: true);
             return;
