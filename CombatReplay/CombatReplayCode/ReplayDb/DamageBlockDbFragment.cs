@@ -58,7 +58,7 @@ public partial class CombatReplayDb
         }
         else
         {
-            TotalDamageByAct[currentAct] += totalDamage;
+            TotalDamageByAct[currentAct - 1] += totalDamage;
         }
     }
 
@@ -81,7 +81,7 @@ public partial class CombatReplayDb
         }
         else
         {
-            TotalDamageReceivedByAct[currentAct] += totalDamage;
+            TotalDamageReceivedByAct[currentAct - 1] += totalDamage;
         }
     }
 
@@ -108,7 +108,7 @@ public partial class CombatReplayDb
         }
         else
         {
-            TotalBlockByAct[currentAct] += amount;
+            TotalBlockByAct[currentAct - 1] += amount;
         }
     }
 

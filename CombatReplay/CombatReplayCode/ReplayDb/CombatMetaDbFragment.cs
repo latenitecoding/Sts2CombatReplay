@@ -50,18 +50,18 @@ public partial class CombatReplayDb
         {
             HeroicCombatByAct.Add(_currentCombat);
         }
-        else if (_currentCombat.TotalDamageDealt > HeroicCombatByAct[currentAct].TotalDamageDealt)
+        else if (_currentCombat.TotalDamageDealt > HeroicCombatByAct[currentAct - 1].TotalDamageDealt)
         {
-            HeroicCombatByAct[currentAct] = _currentCombat;
+            HeroicCombatByAct[currentAct - 1] = _currentCombat;
         }
 
         if (NemesisCombatByAct.Count < currentAct)
         {
             NemesisCombatByAct.Add(_currentCombat);
         }
-        else if (_currentCombat.TotalTrueDamageReceived > NemesisCombatByAct[currentAct].TotalTrueDamageReceived)
+        else if (_currentCombat.TotalTrueDamageReceived > NemesisCombatByAct[currentAct - 1].TotalTrueDamageReceived)
         {
-            NemesisCombatByAct[currentAct] = _currentCombat;
+            NemesisCombatByAct[currentAct - 1] = _currentCombat;
         }
         
         _currentCreatures.Clear();

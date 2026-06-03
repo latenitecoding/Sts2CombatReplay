@@ -152,7 +152,7 @@ public partial class CombatReplayTracker
             return Task.CompletedTask;
         }
         
-        if (target.CurrentHp > 1 && target.Powers.Any(power => power is SlipperyPower))
+        if (target.CurrentHp > 1 && target.Powers.Any(power => power is SlipperyPower or IntangiblePower))
         {
             return Task.CompletedTask;
         }
